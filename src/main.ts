@@ -15,6 +15,7 @@ type CityOption = {
 type Journey = {
   status: JourneyStatus;
   date: string;
+  endpointCity: string;
   steps: string[];
 };
 
@@ -96,6 +97,7 @@ function createEmptyJourney(): Journey {
   return {
     status: 'unset',
     date: '',
+    endpointCity: '',
     steps: [emptyStepValue, emptyStepValue, emptyStepValue],
   };
 }
@@ -126,6 +128,7 @@ function normalizeJourney(journey?: Partial<Journey>): Journey {
     ...createEmptyJourney(),
     ...journey,
     status: journey?.status ?? 'unset',
+    endpointCity: journey?.endpointCity ?? '',
     steps: [
       journey?.steps?.[0] ?? emptyStepValue,
       journey?.steps?.[1] ?? emptyStepValue,
@@ -170,12 +173,16 @@ function findCityByName(cityName: string): CityOption | undefined {
 function formatParticipantPopup(participant: Participant): string {
   const journey = getParticipantJourneys(participant.id)[activeMode];
   const dateLabel = journey.date ? journey.date : 'Date non renseignée';
+  const endpointLabel =
+    activeMode === 'outbound' ? 'Départ' : 'Arrivée retour';
+  const endpointCity = journey.endpointCity || participant.city;
 
   return `
     <strong>${participant.lastName} ${participant.firstName}</strong>
     <span>${participant.city}</span>
     <span>${participant.phone}</span>
     <span>${getStatusLabel(journey.status)}</span>
+    <span>${endpointLabel} : ${endpointCity}</span>
     <span>${activeMode === 'outbound' ? 'Aller' : 'Retour'} : ${dateLabel}</span>
   `;
 }
@@ -230,9 +237,23 @@ function buildCityOptions(selectedValue: string): string {
     .join('');
 }
 
+function buildEndpointCityOptions(selectedValue: string): string {
+  return cityOptions
+    .filter((city) => city.name !== 'Aucune étape')
+    .map((city) => {
+      const selected = city.name === selectedValue ? 'selected' : '';
+
+      return `<option value="${city.name}" ${selected}>${city.name}</option>`;
+    })
+    .join('');
+}
+
 function renderJourneyForm(participant: Participant): string {
   const journey = getParticipantJourneys(participant.id)[activeMode];
   const modeLabel = activeMode === 'outbound' ? 'aller' : 'retour';
+  const endpointLabel =
+    activeMode === 'outbound' ? "Ville de départ" : "Ville d'arrivée";
+  const selectedEndpointCity = journey.endpointCity || participant.city;
   const cannotEnterRoute = journey.status !== 'offer';
 
   return `
@@ -249,6 +270,13 @@ function renderJourneyForm(participant: Participant): string {
       <label>
         Date ${modeLabel}
         <input type="date" name="date" value="${journey.date}" />
+      </label>
+
+      <label>
+        ${endpointLabel}
+        <select name="endpoint-city">
+          ${buildEndpointCityOptions(selectedEndpointCity)}
+        </select>
       </label>
 
       <label>
@@ -330,7 +358,10 @@ function renderParticipantList(items: Participant[]): void {
       const isEditing = participant.id === editingParticipantId;
       const journey = getParticipantJourneys(participant.id)[activeMode];
       const hasJourney =
-        journey.status !== 'unset' || journey.date || journey.steps.some(Boolean);
+        journey.status !== 'unset' ||
+        journey.date ||
+        Boolean(journey.endpointCity) ||
+        journey.steps.some(Boolean);
 
       return `
         <li class="${isSelected ? 'is-selected' : ''}">
@@ -356,14 +387,14 @@ function renderParticipantList(items: Participant[]): void {
 
 function getRoutePoints(participant: Participant, mode: JourneyMode): L.LatLngExpression[] {
   const journey = getParticipantJourneys(participant.id)[mode];
+  const endpointCity = findCityByName(journey.endpointCity || participant.city);
   const selectedSteps = journey.steps
     .map(findCityByName)
     .filter((city): city is CityOption => Boolean(city));
 
-  const participantPoint: L.LatLngExpression = [
-    participant.latitude,
-    participant.longitude,
-  ];
+  const participantPoint: L.LatLngExpression = endpointCity
+    ? [endpointCity.latitude, endpointCity.longitude]
+    : [participant.latitude, participant.longitude];
   const festivalPoint: L.LatLngExpression = [
     festivalLocation.latitude,
     festivalLocation.longitude,
@@ -416,6 +447,7 @@ function updateParticipantJourneyFromForm(form: HTMLFormElement): void {
   const journey: Journey = {
     status,
     date: String(formData.get('date') ?? ''),
+    endpointCity: String(formData.get('endpoint-city') ?? ''),
     steps:
       status === 'offer'
         ? [
