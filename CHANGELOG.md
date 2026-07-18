@@ -4,7 +4,7 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
-## [0.1.0] - Juillet 2026
+## [1.0.0] - Juillet 2026
 
 ### Ajoute
 
