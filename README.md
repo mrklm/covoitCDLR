@@ -6,6 +6,12 @@ Application web de covoiturage pour l'equipe technique du festival Chalon dans l
 
 covoitCDLR affiche une carte interactive permettant de visualiser les participants, leurs villes, et les trajets proposes vers ou depuis Chalon-sur-Saone.
 
+## Captures d'ecran
+
+![Carte et participants](public/docs/CE_1.png)
+
+![Formulaire de trajet](public/docs/CE_2.png)
+
 ## Aide utilisateur
 
 Cette carte aide l'equipe technique du festival Chalon dans la rue a organiser les covoiturages.
