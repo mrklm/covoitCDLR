@@ -28,6 +28,8 @@ type SavedJourneys = Record<string, ParticipantJourneys>;
 
 const storageKey = 'covoitcdlr-journeys';
 const emptyStepValue = '';
+const defaultStepCount = 3;
+const maxStepCount = 8;
 
 const festivalLocation: CityOption & { label: string } = {
   label: 'Festival CDLR',
@@ -98,7 +100,7 @@ function createEmptyJourney(): Journey {
     status: 'unset',
     date: '',
     endpointCity: '',
-    steps: [emptyStepValue, emptyStepValue, emptyStepValue],
+    steps: Array(defaultStepCount).fill(emptyStepValue),
   };
 }
 
@@ -124,16 +126,16 @@ function loadSavedJourneys(): SavedJourneys {
 }
 
 function normalizeJourney(journey?: Partial<Journey>): Journey {
+  const savedSteps = journey?.steps?.length
+    ? journey.steps
+    : Array(defaultStepCount).fill(emptyStepValue);
+
   return {
     ...createEmptyJourney(),
     ...journey,
     status: journey?.status ?? 'unset',
     endpointCity: journey?.endpointCity ?? '',
-    steps: [
-      journey?.steps?.[0] ?? emptyStepValue,
-      journey?.steps?.[1] ?? emptyStepValue,
-      journey?.steps?.[2] ?? emptyStepValue,
-    ],
+    steps: savedSteps.map((step) => step ?? emptyStepValue),
   };
 }
 
@@ -248,13 +250,76 @@ function buildEndpointCityOptions(selectedValue: string): string {
     .join('');
 }
 
+function renderFixedCity(label: string, cityName: string): string {
+  return `
+    <div class="fixed-city">
+      <span>${label}</span>
+      <strong>${cityName}</strong>
+    </div>
+  `;
+}
+
+function renderEndpointField(label: string, selectedCity: string): string {
+  return `
+    <label>
+      ${label}
+      <select name="endpoint-city">
+        ${buildEndpointCityOptions(selectedCity)}
+      </select>
+    </label>
+  `;
+}
+
+function renderStepFields(journey: Journey, disabled: boolean): string {
+  return journey.steps
+    .map(
+      (step, index) => `
+        <label>
+          Étape ${index + 1}
+          <select name="step-${index}" ${disabled ? 'disabled' : ''}>
+            ${buildCityOptions(step ?? emptyStepValue)}
+          </select>
+        </label>
+      `,
+    )
+    .join('');
+}
+
+function renderStepControls(journey: Journey, disabled: boolean): string {
+  const canAddStep = journey.steps.length < maxStepCount;
+  const canRemoveStep = journey.steps.length > 0;
+
+  return `
+    <div class="step-controls">
+      <button type="button" data-step-action="add" ${disabled || !canAddStep ? 'disabled' : ''}>
+        Ajouter une étape
+      </button>
+      <button type="button" data-step-action="remove" ${disabled || !canRemoveStep ? 'disabled' : ''}>
+        Supprimer une étape
+      </button>
+    </div>
+  `;
+}
+
 function renderJourneyForm(participant: Participant): string {
   const journey = getParticipantJourneys(participant.id)[activeMode];
   const modeLabel = activeMode === 'outbound' ? 'aller' : 'retour';
-  const endpointLabel =
-    activeMode === 'outbound' ? "Ville de départ" : "Ville d'arrivée";
   const selectedEndpointCity = journey.endpointCity || participant.city;
   const cannotEnterRoute = journey.status !== 'offer';
+  const routeFields =
+    activeMode === 'outbound'
+      ? `
+        ${renderEndpointField('Ville de départ', selectedEndpointCity)}
+        ${renderStepFields(journey, cannotEnterRoute)}
+        ${renderStepControls(journey, cannotEnterRoute)}
+        ${renderFixedCity("Ville d'arrivée", festivalLocation.name)}
+      `
+      : `
+        ${renderFixedCity('Ville de départ', festivalLocation.name)}
+        ${renderStepFields(journey, cannotEnterRoute)}
+        ${renderStepControls(journey, cannotEnterRoute)}
+        ${renderEndpointField("Ville d'arrivée", selectedEndpointCity)}
+      `;
 
   return `
     <form class="journey-form" data-participant-id="${participant.id}">
@@ -272,33 +337,9 @@ function renderJourneyForm(participant: Participant): string {
         <input type="date" name="date" value="${journey.date}" />
       </label>
 
-      <label>
-        ${endpointLabel}
-        <select name="endpoint-city">
-          ${buildEndpointCityOptions(selectedEndpointCity)}
-        </select>
-      </label>
-
-      <label>
-        Ville-étape 1
-        <select name="step-0" ${cannotEnterRoute ? 'disabled' : ''}>
-          ${buildCityOptions(journey.steps[0] ?? emptyStepValue)}
-        </select>
-      </label>
-
-      <label>
-        Ville-étape 2
-        <select name="step-1" ${cannotEnterRoute ? 'disabled' : ''}>
-          ${buildCityOptions(journey.steps[1] ?? emptyStepValue)}
-        </select>
-      </label>
-
-      <label>
-        Ville-étape 3
-        <select name="step-2" ${cannotEnterRoute ? 'disabled' : ''}>
-          ${buildCityOptions(journey.steps[2] ?? emptyStepValue)}
-        </select>
-      </label>
+      <div class="route-fields">
+        ${routeFields}
+      </div>
     </form>
   `;
 }
@@ -435,6 +476,28 @@ function drawRoutes(items: Participant[]): void {
   });
 }
 
+function readJourneyFromForm(form: HTMLFormElement): Journey {
+  const participantId = form.dataset.participantId;
+  const existingJourney = participantId
+    ? getParticipantJourneys(participantId)[activeMode]
+    : createEmptyJourney();
+
+  const formData = new FormData(form);
+  const status = String(formData.get('status') ?? 'unset') as JourneyStatus;
+
+  return {
+    status,
+    date: String(formData.get('date') ?? ''),
+    endpointCity: String(formData.get('endpoint-city') ?? ''),
+    steps:
+      status === 'offer'
+        ? Array.from(
+            form.querySelectorAll<HTMLSelectElement>('select[name^="step-"]'),
+          ).map((select) => select.value)
+        : existingJourney.steps.map(() => emptyStepValue),
+  };
+}
+
 function updateParticipantJourneyFromForm(form: HTMLFormElement): void {
   const participantId = form.dataset.participantId;
 
@@ -442,21 +505,30 @@ function updateParticipantJourneyFromForm(form: HTMLFormElement): void {
     return;
   }
 
-  const formData = new FormData(form);
-  const status = String(formData.get('status') ?? 'unset') as JourneyStatus;
-  const journey: Journey = {
-    status,
-    date: String(formData.get('date') ?? ''),
-    endpointCity: String(formData.get('endpoint-city') ?? ''),
-    steps:
-      status === 'offer'
-        ? [
-            String(formData.get('step-0') ?? ''),
-            String(formData.get('step-1') ?? ''),
-            String(formData.get('step-2') ?? ''),
-          ]
-        : [emptyStepValue, emptyStepValue, emptyStepValue],
-  };
+  setParticipantJourney(participantId, activeMode, readJourneyFromForm(form));
+  addParticipantMarkers(participants);
+  renderParticipantList(participants);
+  drawRoutes(participants);
+}
+
+function updateStepCountFromButton(button: HTMLButtonElement): void {
+  const form = button.closest<HTMLFormElement>('.journey-form');
+  const participantId = form?.dataset.participantId;
+  const action = button.dataset.stepAction;
+
+  if (!form || !participantId || !action) {
+    return;
+  }
+
+  const journey = readJourneyFromForm(form);
+
+  if (action === 'add' && journey.steps.length < maxStepCount) {
+    journey.steps = [...journey.steps, emptyStepValue];
+  }
+
+  if (action === 'remove' && journey.steps.length > 0) {
+    journey.steps = journey.steps.slice(0, -1);
+  }
 
   setParticipantJourney(participantId, activeMode, journey);
   addParticipantMarkers(participants);
@@ -477,6 +549,15 @@ function bindControls(): void {
   });
 
   list?.addEventListener('click', (event) => {
+    const stepButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '[data-step-action]',
+    );
+
+    if (stepButton) {
+      updateStepCountFromButton(stepButton);
+      return;
+    }
+
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
       '.participant-button',
     );

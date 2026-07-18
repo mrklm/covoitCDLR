@@ -280,11 +280,62 @@ input {
   font-weight: 700;
 }
 
+.route-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.fixed-city {
+  display: grid;
+  gap: 6px;
+  min-height: 38px;
+  padding: 9px 10px;
+  border: 1px solid #d9dfdd;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.fixed-city span {
+  color: #52605b;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.fixed-city strong {
+  color: #20242a;
+  font-size: 0.95rem;
+}
+
 .journey-form select {
   padding: 0 8px;
 }
 
+.step-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.step-controls button {
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid #c7d0cc;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #314d45;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 select:disabled {
+  background: #eef2f0;
+  color: #8a9692;
+  cursor: not-allowed;
+}
+
+button:disabled {
   background: #eef2f0;
   color: #8a9692;
   cursor: not-allowed;
@@ -382,6 +433,10 @@ select:disabled {
 
   .edit-journey-button {
     width: 100%;
+  }
+
+  .step-controls {
+    grid-template-columns: 1fr;
   }
 
   #map {
