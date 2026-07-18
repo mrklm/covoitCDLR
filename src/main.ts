@@ -289,11 +289,34 @@ function getStatusLabel(status: JourneyStatus): string {
 
 function getStatusIcon(status: JourneyStatus): string {
   if (status === 'offer') {
-    return '<span class="status-icon status-icon--offer" aria-label="Propose un covoit" title="Propose un covoit">auto</span>';
+    return `
+      <span class="status-icon status-icon--offer" aria-label="Propose un covoit" title="Propose un covoit">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 11l1.6-4.1A3 3 0 0 1 9.4 5h5.2a3 3 0 0 1 2.8 1.9L19 11" />
+          <path d="M4 11h16v6H4z" />
+          <path d="M7 17v2" />
+          <path d="M17 17v2" />
+          <circle cx="7.5" cy="14.5" r="1.2" />
+          <circle cx="16.5" cy="14.5" r="1.2" />
+        </svg>
+      </span>
+    `;
   }
 
   if (status === 'search') {
-    return '<span class="status-icon status-icon--search" aria-label="Cherche un covoit" title="Cherche un covoit">main</span>';
+    return `
+      <span class="status-icon status-icon--search" aria-label="Cherche un covoit" title="Cherche un covoit">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 11v8" />
+          <path d="M11 10v9" />
+          <path d="M15 11v8" />
+          <path d="M19 13v4a4 4 0 0 1-4 4h-3.8a4 4 0 0 1-3.4-1.9L5 14.8a1.7 1.7 0 0 1 .4-2.2 1.7 1.7 0 0 1 2.4.3L9 14.5" />
+          <path d="M7 11a2 2 0 0 1 4 0" />
+          <path d="M11 10a2 2 0 0 1 4 0v1" />
+          <path d="M15 11a2 2 0 0 1 4 0v2" />
+        </svg>
+      </span>
+    `;
   }
 
   return '<span class="status-icon status-icon--unset" aria-label="Statut non renseigné" title="Statut non renseigné">?</span>';

@@ -205,46 +205,39 @@ input {
 .status-icon {
   display: inline-grid;
   place-items: center;
-  width: 24px;
-  height: 20px;
+  width: 28px;
+  height: 24px;
   flex: 0 0 auto;
   overflow: hidden;
   border-radius: 999px;
-  color: transparent;
-  font-size: 0;
 }
 
-.status-icon::before {
-  color: #ffffff;
-  font-size: 0.72rem;
-  font-weight: 800;
-  line-height: 1;
+.status-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
 }
 
 .status-icon--offer {
   background: #314d45;
-}
-
-.status-icon--offer::before {
-  content: "C";
+  color: #ffffff;
 }
 
 .status-icon--search {
   background: #7a5a2b;
-}
-
-.status-icon--search::before {
-  content: "+";
+  color: #ffffff;
 }
 
 .status-icon--unset {
   border: 1px solid #c7d0cc;
   background: #f4f6f5;
-}
-
-.status-icon--unset::before {
   color: #63706b;
-  content: "?";
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .edit-journey-button {
