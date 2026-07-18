@@ -241,6 +241,72 @@ body.modal-open {
   overflow: hidden;
 }
 
+body.access-locked {
+  overflow: hidden;
+}
+
+.access-gate[hidden] {
+  display: none;
+}
+
+.access-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background:
+    linear-gradient(rgb(20 18 16 / 72%), rgb(20 18 16 / 72%)),
+    var(--page-bg);
+}
+
+.access-panel {
+  display: grid;
+  gap: 14px;
+  width: min(420px, 100%);
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 32%);
+}
+
+.access-panel h2,
+.access-panel p {
+  margin-bottom: 0;
+}
+
+.access-panel label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.access-panel button {
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.access-kicker {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.access-error {
+  color: #b21f2d;
+  font-weight: 800;
+}
+
 .app-header {
   display: flex;
   align-items: center;

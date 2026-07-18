@@ -55,6 +55,9 @@ type JourneyRow = {
 
 const storageKey = 'covoitcdlr-journeys';
 const themeStorageKey = 'covoitcdlr-theme';
+const accessStorageKey = 'covoitcdlr-access-granted';
+const accessPasswordHash =
+  '06fabe7992014b72287461d5a55221f209d6ac71781bae72cdb601a801b10185';
 const emptyStepValue = '';
 const defaultStepCount = 3;
 const maxStepCount = 8;
@@ -806,6 +809,68 @@ function bindHelpOptions(): void {
   });
 }
 
+function bytesToHex(bytes: ArrayBuffer): string {
+  return Array.from(new Uint8Array(bytes))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function hashText(value: string): Promise<string> {
+  const encodedValue = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', encodedValue);
+
+  return bytesToHex(digest);
+}
+
+function unlockAccessGate(): void {
+  const gate = document.querySelector<HTMLElement>('#access-gate');
+
+  if (!gate) {
+    return;
+  }
+
+  gate.hidden = true;
+  document.body.classList.remove('access-locked');
+}
+
+function bindAccessGate(): void {
+  const gate = document.querySelector<HTMLElement>('#access-gate');
+  const form = document.querySelector<HTMLFormElement>('#access-form');
+  const input = document.querySelector<HTMLInputElement>('#access-password');
+  const error = document.querySelector<HTMLElement>('#access-error');
+
+  if (!gate || !form || !input) {
+    return;
+  }
+
+  if (sessionStorage.getItem(accessStorageKey) === 'true') {
+    unlockAccessGate();
+    return;
+  }
+
+  document.body.classList.add('access-locked');
+  input.focus();
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const hash = await hashText(input.value);
+
+    if (hash === accessPasswordHash) {
+      sessionStorage.setItem(accessStorageKey, 'true');
+      input.value = '';
+      unlockAccessGate();
+      return;
+    }
+
+    if (error) {
+      error.hidden = false;
+    }
+
+    input.select();
+  });
+}
+
 function applyRemoteJourneyRow(row: JourneyRow): void {
   savedJourneys = {
     ...savedJourneys,
@@ -854,6 +919,7 @@ function subscribeToRemoteJourneys(): void {
 }
 
 async function initializeApp(): Promise<void> {
+  bindAccessGate();
   savedJourneys = await loadSavedJourneys();
 
   addFestivalMarker();

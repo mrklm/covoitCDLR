@@ -10,6 +10,37 @@
     <title>covoitCDLR</title>
   </head>
   <body>
+    <div
+      id="access-gate"
+      class="access-gate"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="access-gate-title"
+    >
+      <form id="access-form" class="access-panel">
+        <p class="access-kicker">Accès équipe</p>
+        <h2 id="access-gate-title">covoitCDLR</h2>
+        <p>
+          Cette carte est réservée à l'équipe technique du festival Chalon dans
+          la rue.
+        </p>
+        <label for="access-password">
+          Mot de passe
+          <input
+            id="access-password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+        </label>
+        <p id="access-error" class="access-error" hidden>
+          Mot de passe incorrect.
+        </p>
+        <button type="submit">Entrer</button>
+      </form>
+    </div>
+
     <header class="app-header">
       <div class="header-title">
         <h1>covoitCDLR</h1>
