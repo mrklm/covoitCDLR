@@ -36,7 +36,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if encode(digest(access_password, 'sha256'), 'hex') <> '06fabe7992014b72287461d5a55221f209d6ac71781bae72cdb601a801b10185' then
+  if encode(extensions.digest(access_password, 'sha256'), 'hex') <> '06fabe7992014b72287461d5a55221f209d6ac71781bae72cdb601a801b10185' then
     raise exception 'Invalid password';
   end if;
 
