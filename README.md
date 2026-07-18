@@ -77,6 +77,12 @@ npm run build
 
 La sortie de production est generee dans `dist/`.
 
+## Versions
+
+La version actuelle est definie dans `package.json`.
+
+L'historique des changements est suivi dans [CHANGELOG.md](CHANGELOG.md).
+
 ## Configuration Supabase
 
 Le frontend lit les variables suivantes au moment du build :
