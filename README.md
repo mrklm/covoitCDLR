@@ -1,6 +1,6 @@
 # covoitCDLR
 
-![Logo covoitCDLR](public/logo-cdlr.png)
+<img src="public/logo-cdlr.png" alt="Logo covoitCDLR" width="160" />
 
 Application web de covoiturage pour l'equipe technique du festival Chalon dans la rue.
 
