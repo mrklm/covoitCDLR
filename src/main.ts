@@ -359,6 +359,34 @@ function findCityByName(cityName: string): CityOption | undefined {
   return getSelectableCities(false).find((city) => city.name === cityName);
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function buildMissingCityOption(selectedValue: string): string {
+  if (!selectedValue) {
+    return '';
+  }
+
+  return `<option value="${escapeHtml(selectedValue)}" selected>${escapeHtml(selectedValue)} - coordonnées à compléter</option>`;
+}
+
+function hasSelectableCityValue(
+  cities: CityOption[],
+  selectedValue: string,
+): boolean {
+  return cities.some((city) => {
+    const value = city.name === 'Aucune étape' ? emptyStepValue : city.name;
+
+    return value === selectedValue;
+  });
+}
+
 function mapTechnicianToParticipant(
   technician: TechnicianRow,
   index: number,
@@ -475,24 +503,40 @@ function addParticipantMarkers(items: Participant[]): void {
 }
 
 function buildCityOptions(selectedValue: string): string {
-  return getSelectableCities(true)
+  const cities = getSelectableCities(true);
+  const missingSelectedOption = hasSelectableCityValue(cities, selectedValue)
+    ? ''
+    : buildMissingCityOption(selectedValue);
+
+  return (
+    missingSelectedOption +
+    cities
     .map((city) => {
       const value = city.name === 'Aucune étape' ? emptyStepValue : city.name;
       const selected = value === selectedValue ? 'selected' : '';
 
-      return `<option value="${value}" ${selected}>${city.name}</option>`;
+      return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(city.name)}</option>`;
     })
-    .join('');
+    .join('')
+  );
 }
 
 function buildEndpointCityOptions(selectedValue: string): string {
-  return getSelectableCities(false)
+  const cities = getSelectableCities(false);
+  const missingSelectedOption = hasSelectableCityValue(cities, selectedValue)
+    ? ''
+    : buildMissingCityOption(selectedValue);
+
+  return (
+    missingSelectedOption +
+    cities
     .map((city) => {
       const selected = city.name === selectedValue ? 'selected' : '';
 
-      return `<option value="${city.name}" ${selected}>${city.name}</option>`;
+      return `<option value="${escapeHtml(city.name)}" ${selected}>${escapeHtml(city.name)}</option>`;
     })
-    .join('');
+    .join('')
+  );
 }
 
 function renderFixedCity(label: string, cityName: string): string {
