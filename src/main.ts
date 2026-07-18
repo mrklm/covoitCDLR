@@ -29,8 +29,8 @@ type ThemeName =
 
 type CityOption = {
   name: string;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 type Journey = {
@@ -76,7 +76,12 @@ const emptyStepValue = '';
 const defaultStepCount = 3;
 const maxStepCount = 8;
 
-const festivalLocation: CityOption & { label: string } = {
+const festivalLocation: {
+  label: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+} = {
   label: 'Festival CDLR',
   name: 'Chalon-sur-Saône',
   latitude: 46.7811,
@@ -321,16 +326,11 @@ function setParticipantJourney(
 }
 
 function getParticipantCityOptions(): CityOption[] {
-  return appParticipants
-    .filter(
-      (participant) =>
-        participant.latitude !== null && participant.longitude !== null,
-    )
-    .map((participant) => ({
-      name: participant.city,
-      latitude: participant.latitude as number,
-      longitude: participant.longitude as number,
-    }));
+  return appParticipants.map((participant) => ({
+    name: participant.city,
+    latitude: participant.latitude,
+    longitude: participant.longitude,
+  }));
 }
 
 function getSelectableCities(includeEmptyOption: boolean): CityOption[] {
@@ -357,6 +357,12 @@ function getSelectableCities(includeEmptyOption: boolean): CityOption[] {
 
 function findCityByName(cityName: string): CityOption | undefined {
   return getSelectableCities(false).find((city) => city.name === cityName);
+}
+
+function hasCityCoordinates(
+  city: CityOption | undefined,
+): city is CityOption & { latitude: number; longitude: number } {
+  return city !== undefined && city.latitude !== null && city.longitude !== null;
 }
 
 function escapeHtml(value: string): string {
@@ -514,8 +520,10 @@ function buildCityOptions(selectedValue: string): string {
     .map((city) => {
       const value = city.name === 'Aucune étape' ? emptyStepValue : city.name;
       const selected = value === selectedValue ? 'selected' : '';
+      const coordinatesLabel =
+        value && !hasCityCoordinates(city) ? ' - coordonnées à compléter' : '';
 
-      return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(city.name)}</option>`;
+      return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(city.name + coordinatesLabel)}</option>`;
     })
     .join('')
   );
@@ -532,8 +540,11 @@ function buildEndpointCityOptions(selectedValue: string): string {
     cities
     .map((city) => {
       const selected = city.name === selectedValue ? 'selected' : '';
+      const coordinatesLabel = !hasCityCoordinates(city)
+        ? ' - coordonnées à compléter'
+        : '';
 
-      return `<option value="${escapeHtml(city.name)}" ${selected}>${escapeHtml(city.name)}</option>`;
+      return `<option value="${escapeHtml(city.name)}" ${selected}>${escapeHtml(city.name + coordinatesLabel)}</option>`;
     })
     .join('')
   );
@@ -736,10 +747,12 @@ function getRoutePoints(participant: Participant, mode: JourneyMode): L.LatLngEx
   const endpointCity = findCityByName(journey.endpointCity || participant.city);
   const selectedSteps = journey.steps
     .map(findCityByName)
-    .filter((city): city is CityOption => Boolean(city));
+    .filter((city): city is CityOption => Boolean(city) && hasCityCoordinates(city));
 
   const participantPoint: L.LatLngExpression | null = endpointCity
-    ? [endpointCity.latitude, endpointCity.longitude]
+    ? hasCityCoordinates(endpointCity)
+      ? [endpointCity.latitude as number, endpointCity.longitude as number]
+      : null
     : participant.latitude !== null && participant.longitude !== null
       ? [participant.latitude, participant.longitude]
       : null;
@@ -748,8 +761,8 @@ function getRoutePoints(participant: Participant, mode: JourneyMode): L.LatLngEx
     festivalLocation.longitude,
   ];
   const stepPoints = selectedSteps.map<L.LatLngExpression>((city) => [
-    city.latitude,
-    city.longitude,
+    city.latitude as number,
+    city.longitude as number,
   ]);
 
   if (!participantPoint) {
