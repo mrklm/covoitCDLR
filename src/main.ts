@@ -912,8 +912,8 @@ function drawRoutes(items: Participant[]): void {
 
     L.polyline(routePoints, {
       color: participant.color,
-      weight: isSelected ? 5 : 3,
-      opacity: isSelected ? 0.9 : 0.45,
+      weight: isSelected ? 6 : 4,
+      opacity: isSelected ? 0.95 : 0.7,
       lineCap: 'round',
       lineJoin: 'round',
     })
