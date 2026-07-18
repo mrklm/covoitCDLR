@@ -390,16 +390,32 @@ function getParticipantCityOptions(): CityOption[] {
   }));
 }
 
-function getSelectableCities(includeEmptyOption: boolean): CityOption[] {
-  const cities = includeEmptyOption ? [...cityOptions] : cityOptions.slice(1);
+function getCityKey(cityName: string): string {
+  return cityName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
 
-  [...cities, ...getParticipantCityOptions()].forEach((city) => {
-    if (!cities.some((existingCity) => existingCity.name === city.name)) {
-      cities.push(city);
+function getSelectableCities(includeEmptyOption: boolean): CityOption[] {
+  const citiesByKey = new Map<string, CityOption>();
+  const allCities = [
+    ...(includeEmptyOption ? cityOptions : cityOptions.slice(1)),
+    ...getParticipantCityOptions(),
+  ];
+
+  allCities.forEach((city) => {
+    const cityKey = getCityKey(city.name);
+    const existingCity = citiesByKey.get(cityKey);
+
+    if (!existingCity || (!hasCityCoordinates(existingCity) && hasCityCoordinates(city))) {
+      citiesByKey.set(cityKey, city);
     }
   });
 
-  return cities.sort((cityA, cityB) => {
+  return Array.from(citiesByKey.values()).sort((cityA, cityB) => {
     if (cityA.name === 'Aucune étape') {
       return -1;
     }
@@ -413,7 +429,11 @@ function getSelectableCities(includeEmptyOption: boolean): CityOption[] {
 }
 
 function findCityByName(cityName: string): CityOption | undefined {
-  return getSelectableCities(false).find((city) => city.name === cityName);
+  const searchedKey = getCityKey(cityName);
+
+  return getSelectableCities(false).find(
+    (city) => getCityKey(city.name) === searchedKey,
+  );
 }
 
 function hasCityCoordinates(
@@ -443,10 +463,12 @@ function hasSelectableCityValue(
   cities: CityOption[],
   selectedValue: string,
 ): boolean {
+  const selectedKey = getCityKey(selectedValue);
+
   return cities.some((city) => {
     const value = city.name === 'Aucune étape' ? emptyStepValue : city.name;
 
-    return value === selectedValue;
+    return getCityKey(value) === selectedKey;
   });
 }
 
@@ -570,13 +592,14 @@ function buildCityOptions(selectedValue: string): string {
   const missingSelectedOption = hasSelectableCityValue(cities, selectedValue)
     ? ''
     : buildMissingCityOption(selectedValue);
+  const selectedKey = getCityKey(selectedValue);
 
   return (
     missingSelectedOption +
     cities
     .map((city) => {
       const value = city.name === 'Aucune étape' ? emptyStepValue : city.name;
-      const selected = value === selectedValue ? 'selected' : '';
+      const selected = getCityKey(value) === selectedKey ? 'selected' : '';
       const coordinatesLabel =
         value && !hasCityCoordinates(city) ? ' - coordonnées à compléter' : '';
 
@@ -591,12 +614,14 @@ function buildEndpointCityOptions(selectedValue: string): string {
   const missingSelectedOption = hasSelectableCityValue(cities, selectedValue)
     ? ''
     : buildMissingCityOption(selectedValue);
+  const selectedKey = getCityKey(selectedValue);
 
   return (
     missingSelectedOption +
     cities
     .map((city) => {
-      const selected = city.name === selectedValue ? 'selected' : '';
+      const selected =
+        getCityKey(city.name) === selectedKey ? 'selected' : '';
       const coordinatesLabel = !hasCityCoordinates(city)
         ? ' - coordonnées à compléter'
         : '';
