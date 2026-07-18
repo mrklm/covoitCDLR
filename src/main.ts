@@ -2,10 +2,27 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import { participants, type Participant } from './participants';
+import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 type JourneyMode = 'outbound' | 'return';
 type JourneyStatus = 'unset' | 'offer' | 'search';
-type ThemeName = 'cafe-latte' | 'clair' | 'ardoise';
+type ThemeName =
+  | 'sombre-midnight-garage'
+  | 'sombre-air-klm-night-flight'
+  | 'sombre-cafe-serre'
+  | 'sombre-matrix-deja-vu'
+  | 'sombre-miami-vice-1987'
+  | 'sombre-cyber-licorne'
+  | 'clair-air-klm-day-flight'
+  | 'clair-matin-brumeux'
+  | 'clair-latte-vanille'
+  | 'clair-miellerie-la-divette'
+  | 'pouet-chewing-gum-ocean'
+  | 'pouet-pamplemousse'
+  | 'pouet-raisin-toxique'
+  | 'pouet-citron-qui-pique'
+  | 'pouet-barbie-apocalypse'
+  | 'pouet-compagnie-creole';
 
 type CityOption = {
   name: string;
@@ -26,6 +43,15 @@ type ParticipantJourneys = {
 };
 
 type SavedJourneys = Record<string, ParticipantJourneys>;
+
+type JourneyRow = {
+  participant_id: string;
+  journey_mode: JourneyMode;
+  status: JourneyStatus;
+  date: string | null;
+  endpoint_city: string | null;
+  steps: unknown;
+};
 
 const storageKey = 'covoitcdlr-journeys';
 const themeStorageKey = 'covoitcdlr-theme';
@@ -73,9 +99,26 @@ const franceCenter: L.LatLngExpression = [46.8, 2.4];
 let activeMode: JourneyMode = 'outbound';
 let selectedParticipantId = participants[0]?.id ?? '';
 let editingParticipantId: string | null = null;
-let savedJourneys = loadSavedJourneys();
+let savedJourneys: SavedJourneys = {};
 
-const themes: ThemeName[] = ['cafe-latte', 'clair', 'ardoise'];
+const themes: ThemeName[] = [
+  'sombre-midnight-garage',
+  'sombre-air-klm-night-flight',
+  'sombre-cafe-serre',
+  'sombre-matrix-deja-vu',
+  'sombre-miami-vice-1987',
+  'sombre-cyber-licorne',
+  'clair-air-klm-day-flight',
+  'clair-matin-brumeux',
+  'clair-latte-vanille',
+  'clair-miellerie-la-divette',
+  'pouet-chewing-gum-ocean',
+  'pouet-pamplemousse',
+  'pouet-raisin-toxique',
+  'pouet-citron-qui-pique',
+  'pouet-barbie-apocalypse',
+  'pouet-compagnie-creole',
+];
 
 const map = L.map('map', {
   zoomControl: true,
@@ -115,7 +158,7 @@ function createEmptyParticipantJourneys(): ParticipantJourneys {
   };
 }
 
-function loadSavedJourneys(): SavedJourneys {
+function loadLocalSavedJourneys(): SavedJourneys {
   const rawValue = localStorage.getItem(storageKey);
 
   if (!rawValue) {
@@ -127,6 +170,47 @@ function loadSavedJourneys(): SavedJourneys {
   } catch {
     return {};
   }
+}
+
+async function loadSavedJourneys(): Promise<SavedJourneys> {
+  const localJourneys = loadLocalSavedJourneys();
+
+  if (!isSupabaseConfigured || !supabase) {
+    return localJourneys;
+  }
+
+  const { data, error } = await supabase
+    .from('covoit_journeys')
+    .select('participant_id, journey_mode, status, date, endpoint_city, steps');
+
+  if (error) {
+    console.warn('Chargement Supabase impossible, données locales utilisées.', error);
+    return localJourneys;
+  }
+
+  const remoteJourneys = (data as JourneyRow[]).reduce<SavedJourneys>(
+    (journeys, row) => {
+      journeys[row.participant_id] = {
+        ...createEmptyParticipantJourneys(),
+        ...journeys[row.participant_id],
+        [row.journey_mode]: normalizeJourney({
+          status: row.status,
+          date: row.date ?? '',
+          endpointCity: row.endpoint_city ?? '',
+          steps: Array.isArray(row.steps)
+            ? row.steps.map(String)
+            : Array(defaultStepCount).fill(emptyStepValue),
+        }),
+      };
+
+      return journeys;
+    },
+    {},
+  );
+
+  localStorage.setItem(storageKey, JSON.stringify(remoteJourneys));
+
+  return remoteJourneys;
 }
 
 function normalizeJourney(journey?: Partial<Journey>): Journey {
@@ -145,6 +229,35 @@ function normalizeJourney(journey?: Partial<Journey>): Journey {
 
 function saveJourneys(): void {
   localStorage.setItem(storageKey, JSON.stringify(savedJourneys));
+}
+
+async function saveJourneyToSupabase(
+  participantId: string,
+  mode: JourneyMode,
+  journey: Journey,
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) {
+    return;
+  }
+
+  const { error } = await supabase.from('covoit_journeys').upsert(
+    {
+      participant_id: participantId,
+      journey_mode: mode,
+      status: journey.status,
+      date: journey.date,
+      endpoint_city: journey.endpointCity,
+      steps: journey.steps,
+      updated_at: new Date().toISOString(),
+    },
+    {
+      onConflict: 'participant_id,journey_mode',
+    },
+  );
+
+  if (error) {
+    console.warn('Sauvegarde Supabase impossible.', error);
+  }
 }
 
 function getParticipantJourneys(participantId: string): ParticipantJourneys {
@@ -170,6 +283,7 @@ function setParticipantJourney(
   };
 
   saveJourneys();
+  void saveJourneyToSupabase(participantId, mode, journey);
 }
 
 function findCityByName(cityName: string): CityOption | undefined {
@@ -609,7 +723,7 @@ function getSavedTheme(): ThemeName {
 
   return themes.includes(savedTheme as ThemeName)
     ? (savedTheme as ThemeName)
-    : 'cafe-latte';
+    : 'clair-latte-vanille';
 }
 
 function applyTheme(theme: ThemeName): void {
@@ -692,12 +806,66 @@ function bindHelpOptions(): void {
   });
 }
 
-addFestivalMarker();
-addParticipantMarkers(participants);
-renderParticipantList(participants);
-drawRoutes(participants);
-bindControls();
-bindHelpOptions();
+function applyRemoteJourneyRow(row: JourneyRow): void {
+  savedJourneys = {
+    ...savedJourneys,
+    [row.participant_id]: {
+      ...getParticipantJourneys(row.participant_id),
+      [row.journey_mode]: normalizeJourney({
+        status: row.status,
+        date: row.date ?? '',
+        endpointCity: row.endpoint_city ?? '',
+        steps: Array.isArray(row.steps)
+          ? row.steps.map(String)
+          : Array(defaultStepCount).fill(emptyStepValue),
+      }),
+    },
+  };
+
+  saveJourneys();
+  addParticipantMarkers(participants);
+  renderParticipantList(participants);
+  drawRoutes(participants);
+}
+
+function subscribeToRemoteJourneys(): void {
+  if (!isSupabaseConfigured || !supabase) {
+    return;
+  }
+
+  supabase
+    .channel('covoit_journeys_changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'covoit_journeys',
+      },
+      (payload) => {
+        if (payload.eventType === 'DELETE') {
+          return;
+        }
+
+        applyRemoteJourneyRow(payload.new as JourneyRow);
+      },
+    )
+    .subscribe();
+}
+
+async function initializeApp(): Promise<void> {
+  savedJourneys = await loadSavedJourneys();
+
+  addFestivalMarker();
+  addParticipantMarkers(participants);
+  renderParticipantList(participants);
+  drawRoutes(participants);
+  bindControls();
+  bindHelpOptions();
+  subscribeToRemoteJourneys();
+}
+
+void initializeApp();
 
 // Leaflet doit recalculer sa taille lorsque le navigateur modifie le viewport.
 window.addEventListener('resize', () => {
