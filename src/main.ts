@@ -494,13 +494,19 @@ function mapTechnicianToParticipant(
   technician: TechnicianRow,
   index: number,
 ): Participant {
+  const cityCoordinates = findCityByName(technician.city);
+  const latitude =
+    technician.latitude ?? (hasCityCoordinates(cityCoordinates) ? cityCoordinates.latitude : null);
+  const longitude =
+    technician.longitude ?? (hasCityCoordinates(cityCoordinates) ? cityCoordinates.longitude : null);
+
   return {
     id: technician.id,
     firstName: technician.first_name,
     lastName: technician.last_name,
     city: technician.city,
-    latitude: technician.latitude,
-    longitude: technician.longitude,
+    latitude,
+    longitude,
     phone: technician.phone,
     color: technician.color ?? participantColors[index % participantColors.length],
   };
