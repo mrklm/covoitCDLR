@@ -375,6 +375,10 @@ h2 {
   gap: 14px;
 }
 
+.mobile-view-switcher {
+  display: none;
+}
+
 .help-button,
 .modal-close-button,
 .modal-tab {
@@ -906,15 +910,44 @@ button:disabled {
     width: 100%;
   }
 
+  .mobile-view-switcher {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 14px 0;
+    background: var(--page-bg);
+  }
+
+  .mobile-view-button {
+    min-height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-weight: 800;
+  }
+
+  .mobile-view-button.is-active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #ffffff;
+  }
+
   .app-layout {
     grid-template-columns: 1fr;
     height: auto;
     min-height: 0;
   }
 
+  body[data-mobile-view="map"] .info-panel,
+  body[data-mobile-view="participants"] .map-panel {
+    display: none;
+  }
+
   #map {
-    height: 68vh;
-    min-height: 420px;
+    height: calc(100dvh - 290px);
+    min-height: 360px;
   }
 
   .info-panel {

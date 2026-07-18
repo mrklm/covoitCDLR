@@ -199,6 +199,7 @@ let selectedParticipantId = appParticipants[0]?.id ?? '';
 let editingParticipantId: string | null = null;
 let savedJourneys: SavedJourneys = {};
 let participantSourceNotice = '';
+let activeMobileView: 'map' | 'participants' = 'map';
 
 const themes: ThemeName[] = [
   'sombre-midnight-garage',
@@ -983,9 +984,44 @@ function updateStepCountFromButton(button: HTMLButtonElement): void {
   drawRoutes(appParticipants);
 }
 
+function setMobileView(view: 'map' | 'participants'): void {
+  activeMobileView = view;
+  document.body.dataset.mobileView = view;
+
+  document
+    .querySelectorAll<HTMLButtonElement>('.mobile-view-button')
+    .forEach((button) => {
+      const isActive = button.dataset.mobileView === view;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
+    });
+
+  if (view === 'map') {
+    requestAnimationFrame(() => {
+      map.invalidateSize();
+      addParticipantMarkers(appParticipants);
+      drawRoutes(appParticipants);
+    });
+  }
+}
+
 function bindControls(): void {
   const modeSelect = document.querySelector<HTMLSelectElement>('#journey-mode');
   const list = document.querySelector<HTMLUListElement>('#participant-list');
+
+  setMobileView(activeMobileView);
+
+  document
+    .querySelectorAll<HTMLButtonElement>('.mobile-view-button')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const view = button.dataset.mobileView;
+
+        if (view === 'map' || view === 'participants') {
+          setMobileView(view);
+        }
+      });
+    });
 
   modeSelect?.addEventListener('change', () => {
     activeMode = modeSelect.value as JourneyMode;
@@ -993,6 +1029,10 @@ function bindControls(): void {
     addParticipantMarkers(appParticipants);
     renderParticipantList(appParticipants);
     drawRoutes(appParticipants);
+
+    if (activeMobileView === 'map') {
+      map.invalidateSize();
+    }
   });
 
   list?.addEventListener('click', (event) => {
