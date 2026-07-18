@@ -222,13 +222,20 @@ input {
   stroke-width: 1.9;
 }
 
+.status-icon .thumb-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  stroke-width: 1.4;
+}
+
 .status-icon--offer {
   background: #314d45;
   color: #ffffff;
 }
 
 .status-icon--search {
-  background: #7a5a2b;
+  background: #8a4f24;
   color: #ffffff;
 }
 

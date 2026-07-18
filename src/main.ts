@@ -306,14 +306,9 @@ function getStatusIcon(status: JourneyStatus): string {
   if (status === 'search') {
     return `
       <span class="status-icon status-icon--search" aria-label="Cherche un covoit" title="Cherche un covoit">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M7 11v8" />
-          <path d="M11 10v9" />
-          <path d="M15 11v8" />
-          <path d="M19 13v4a4 4 0 0 1-4 4h-3.8a4 4 0 0 1-3.4-1.9L5 14.8a1.7 1.7 0 0 1 .4-2.2 1.7 1.7 0 0 1 2.4.3L9 14.5" />
-          <path d="M7 11a2 2 0 0 1 4 0" />
-          <path d="M11 10a2 2 0 0 1 4 0v1" />
-          <path d="M15 11a2 2 0 0 1 4 0v2" />
+        <svg class="thumb-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 10v10H4V10h3z" />
+          <path d="M7 19h8.6a2 2 0 0 0 1.9-1.4l2.1-6.2A1.8 1.8 0 0 0 17.9 9H14V5.8A2.8 2.8 0 0 0 11.2 3L10 8.2 7 10z" />
         </svg>
       </span>
     `;
