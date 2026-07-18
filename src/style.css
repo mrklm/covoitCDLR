@@ -209,7 +209,9 @@ input {
   height: 24px;
   flex: 0 0 auto;
   overflow: hidden;
+  border: 1px solid #c7d0cc;
   border-radius: 999px;
+  background: #ffffff;
 }
 
 .status-icon svg {
@@ -230,18 +232,14 @@ input {
 }
 
 .status-icon--offer {
-  background: #314d45;
-  color: #ffffff;
+  color: #314d45;
 }
 
 .status-icon--search {
-  background: #8a4f24;
-  color: #ffffff;
+  color: #8a4f24;
 }
 
 .status-icon--unset {
-  border: 1px solid #c7d0cc;
-  background: #f4f6f5;
   color: #63706b;
   font-size: 0.82rem;
   font-weight: 800;
