@@ -325,8 +325,8 @@ body.access-locked {
 }
 
 .header-logo {
-  width: 70px;
-  height: 70px;
+  width: 140px;
+  height: 140px;
   flex: 0 0 auto;
   object-fit: contain;
 }
@@ -926,8 +926,8 @@ button:disabled {
   }
 
   .header-logo {
-    width: 56px;
-    height: 56px;
+    width: 112px;
+    height: 112px;
   }
 
   .app-layout {
