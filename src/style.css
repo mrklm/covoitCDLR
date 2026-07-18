@@ -317,9 +317,24 @@ body.access-locked {
   background: var(--surface);
 }
 
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.header-logo {
+  width: 70px;
+  height: 70px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
 .header-title {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .header-title p {
@@ -904,6 +919,15 @@ button:disabled {
 @media (max-width: 520px) {
   .app-header {
     padding-top: 18px;
+  }
+
+  .header-brand {
+    gap: 10px;
+  }
+
+  .header-logo {
+    width: 56px;
+    height: 56px;
   }
 
   .app-layout {
