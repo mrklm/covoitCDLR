@@ -11,11 +11,18 @@
   </head>
   <body>
     <header class="app-header">
-      <div>
-        <p class="eyebrow">Festival à Chalon-sur-Saône</p>
+      <div class="header-title">
         <h1>covoitCDLR</h1>
+        <p>Festival Chalon dans la rue</p>
       </div>
-      <p class="header-note">Carte de démonstration pour organiser les trajets.</p>
+      <div class="header-actions">
+        <p class="header-note">
+          Carte pour organiser des covoiturages pour l'équipe CDLR
+        </p>
+        <button id="help-options-button" class="help-button" type="button">
+          Aide et options
+        </button>
+      </div>
     </header>
 
     <main class="app-layout">
@@ -39,6 +46,110 @@
         <ul id="participant-list" class="participant-list"></ul>
       </aside>
     </main>
+
+    <div
+      id="help-options-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="help-options-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-modal-close></div>
+      <section class="modal-panel">
+        <header class="modal-header">
+          <h2 id="help-options-title">Aide et options</h2>
+          <button class="modal-close-button" type="button" data-modal-close>
+            Fermer
+          </button>
+        </header>
+
+        <div class="modal-tabs" role="tablist" aria-label="Aide et options">
+          <button
+            id="help-tab"
+            class="modal-tab is-active"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="help-panel"
+            data-tab="help"
+          >
+            Aide
+          </button>
+          <button
+            id="options-tab"
+            class="modal-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="options-panel"
+            data-tab="options"
+          >
+            Options
+          </button>
+        </div>
+
+        <div
+          id="help-panel"
+          class="modal-tab-panel is-active"
+          role="tabpanel"
+          aria-labelledby="help-tab"
+          data-tab-panel="help"
+        >
+          <p>
+            Cette page permet de visualiser les trajets aller et retour de
+            l'équipe vers le festival. Utilisez le sélecteur au-dessus de la
+            carte pour basculer entre les allers et les retours.
+          </p>
+          <p>
+            Dans la liste des participants, le bouton Renseigner ouvre le
+            formulaire. Une personne peut proposer un covoit ou chercher une
+            place. Seuls les trajets proposés sont dessinés sur la carte.
+          </p>
+          <p>
+            Les données saisies sont enregistrées dans le navigateur utilisé.
+            Elles ne sont pas envoyées vers un serveur.
+          </p>
+        </div>
+
+        <div
+          id="options-panel"
+          class="modal-tab-panel"
+          role="tabpanel"
+          aria-labelledby="options-tab"
+          data-tab-panel="options"
+          hidden
+        >
+          <label class="theme-field" for="theme-select">
+            Thème
+            <select id="theme-select">
+              <option value="cafe-latte">Café latté</option>
+              <option value="clair">Clair sobre</option>
+              <option value="ardoise">Ardoise</option>
+            </select>
+          </label>
+
+          <div class="credits">
+            <p>Développé par Klm - contact : clementmorel@free.fr</p>
+          </div>
+
+          <section class="programs-section" aria-label="Programmes développés">
+            <h3>Programmes développés</h3>
+            <ul>
+              <li>
+                <strong>covoitCDLR</strong>
+                <span>
+                  Carte interactive de covoiturage pour l'équipe du festival.
+                </span>
+                <a href="https://github.com/mrklm/covoitCDLR" target="_blank" rel="noreferrer">
+                  GitHub
+                </a>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </section>
+    </div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

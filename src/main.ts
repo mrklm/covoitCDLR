@@ -5,6 +5,7 @@ import { participants, type Participant } from './participants';
 
 type JourneyMode = 'outbound' | 'return';
 type JourneyStatus = 'unset' | 'offer' | 'search';
+type ThemeName = 'cafe-latte' | 'clair' | 'ardoise';
 
 type CityOption = {
   name: string;
@@ -27,6 +28,7 @@ type ParticipantJourneys = {
 type SavedJourneys = Record<string, ParticipantJourneys>;
 
 const storageKey = 'covoitcdlr-journeys';
+const themeStorageKey = 'covoitcdlr-theme';
 const emptyStepValue = '';
 const defaultStepCount = 3;
 const maxStepCount = 8;
@@ -72,6 +74,8 @@ let activeMode: JourneyMode = 'outbound';
 let selectedParticipantId = participants[0]?.id ?? '';
 let editingParticipantId: string | null = null;
 let savedJourneys = loadSavedJourneys();
+
+const themes: ThemeName[] = ['cafe-latte', 'clair', 'ardoise'];
 
 const map = L.map('map', {
   zoomControl: true,
@@ -600,11 +604,100 @@ function bindControls(): void {
   });
 }
 
+function getSavedTheme(): ThemeName {
+  const savedTheme = localStorage.getItem(themeStorageKey);
+
+  return themes.includes(savedTheme as ThemeName)
+    ? (savedTheme as ThemeName)
+    : 'cafe-latte';
+}
+
+function applyTheme(theme: ThemeName): void {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem(themeStorageKey, theme);
+}
+
+function setActiveModalTab(tabName: string): void {
+  document.querySelectorAll<HTMLButtonElement>('.modal-tab').forEach((tab) => {
+    const isActive = tab.dataset.tab === tabName;
+    tab.classList.toggle('is-active', isActive);
+    tab.setAttribute('aria-selected', String(isActive));
+  });
+
+  document
+    .querySelectorAll<HTMLElement>('[data-tab-panel]')
+    .forEach((panel) => {
+      const isActive = panel.dataset.tabPanel === tabName;
+      panel.classList.toggle('is-active', isActive);
+      panel.hidden = !isActive;
+    });
+}
+
+function openHelpOptionsModal(): void {
+  const modal = document.querySelector<HTMLElement>('#help-options-modal');
+
+  if (!modal) {
+    return;
+  }
+
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+}
+
+function closeHelpOptionsModal(): void {
+  const modal = document.querySelector<HTMLElement>('#help-options-modal');
+
+  if (!modal) {
+    return;
+  }
+
+  modal.hidden = true;
+  document.body.classList.remove('modal-open');
+}
+
+function bindHelpOptions(): void {
+  const openButton =
+    document.querySelector<HTMLButtonElement>('#help-options-button');
+  const themeSelect = document.querySelector<HTMLSelectElement>('#theme-select');
+  const savedTheme = getSavedTheme();
+
+  applyTheme(savedTheme);
+
+  if (themeSelect) {
+    themeSelect.value = savedTheme;
+  }
+
+  openButton?.addEventListener('click', openHelpOptionsModal);
+
+  document.querySelectorAll<HTMLElement>('[data-modal-close]').forEach((item) => {
+    item.addEventListener('click', closeHelpOptionsModal);
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('.modal-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      if (tab.dataset.tab) {
+        setActiveModalTab(tab.dataset.tab);
+      }
+    });
+  });
+
+  themeSelect?.addEventListener('change', () => {
+    applyTheme(themeSelect.value as ThemeName);
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeHelpOptionsModal();
+    }
+  });
+}
+
 addFestivalMarker();
 addParticipantMarkers(participants);
 renderParticipantList(participants);
 drawRoutes(participants);
 bindControls();
+bindHelpOptions();
 
 // Leaflet doit recalculer sa taille lorsque le navigateur modifie le viewport.
 window.addEventListener('resize', () => {
