@@ -157,6 +157,13 @@ input {
   border-top-color: #b8c7c2;
 }
 
+.participant-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
 .participant-button {
   display: grid;
   gap: 3px;
@@ -170,6 +177,21 @@ input {
   cursor: pointer;
 }
 
+.participant-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.participant-color {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--participant-color);
+}
+
 .participant-button strong {
   color: #20242a;
 }
@@ -178,6 +200,69 @@ input {
 .participant-button span {
   color: #63706b;
   font-size: 0.95rem;
+}
+
+.status-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 20px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 999px;
+  color: transparent;
+  font-size: 0;
+}
+
+.status-icon::before {
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.status-icon--offer {
+  background: #314d45;
+}
+
+.status-icon--offer::before {
+  content: "C";
+}
+
+.status-icon--search {
+  background: #7a5a2b;
+}
+
+.status-icon--search::before {
+  content: "+";
+}
+
+.status-icon--unset {
+  border: 1px solid #c7d0cc;
+  background: #f4f6f5;
+}
+
+.status-icon--unset::before {
+  color: #63706b;
+  content: "?";
+}
+
+.edit-journey-button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #c7d0cc;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #314d45;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.edit-journey-button:hover,
+.participant-button:hover strong {
+  color: #2f6f8f;
 }
 
 .journey-form {
@@ -199,6 +284,12 @@ input {
 
 .journey-form select {
   padding: 0 8px;
+}
+
+select:disabled {
+  background: #eef2f0;
+  color: #8a9692;
+  cursor: not-allowed;
 }
 
 .festival-marker,
@@ -226,7 +317,7 @@ input {
   height: 18px;
   border: 3px solid #ffffff;
   border-radius: 50%;
-  background: #2f6f8f;
+  background: var(--participant-color);
   box-shadow: 0 6px 16px rgb(32 36 42 / 24%);
 }
 
@@ -284,6 +375,14 @@ input {
   }
 
   .map-toolbar select {
+    width: 100%;
+  }
+
+  .participant-row {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-journey-button {
     width: 100%;
   }
 

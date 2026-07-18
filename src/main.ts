@@ -4,6 +4,7 @@ import './style.css';
 import { participants, type Participant } from './participants';
 
 type JourneyMode = 'outbound' | 'return';
+type JourneyStatus = 'unset' | 'offer' | 'search';
 
 type CityOption = {
   name: string;
@@ -12,6 +13,7 @@ type CityOption = {
 };
 
 type Journey = {
+  status: JourneyStatus;
   date: string;
   steps: string[];
 };
@@ -65,6 +67,7 @@ const cityOptions: CityOption[] = [
 const franceCenter: L.LatLngExpression = [46.8, 2.4];
 let activeMode: JourneyMode = 'outbound';
 let selectedParticipantId = participants[0]?.id ?? '';
+let editingParticipantId: string | null = null;
 let savedJourneys = loadSavedJourneys();
 
 const map = L.map('map', {
@@ -86,19 +89,12 @@ const festivalIcon = L.divIcon({
   popupAnchor: [0, -25],
 });
 
-const participantIcon = L.divIcon({
-  className: 'participant-marker',
-  html: '<span aria-hidden="true"></span>',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-  popupAnchor: [0, -12],
-});
-
 const participantLayer = L.layerGroup().addTo(map);
 const routeLayer = L.layerGroup().addTo(map);
 
 function createEmptyJourney(): Journey {
   return {
+    status: 'unset',
     date: '',
     steps: [emptyStepValue, emptyStepValue, emptyStepValue],
   };
@@ -125,12 +121,30 @@ function loadSavedJourneys(): SavedJourneys {
   }
 }
 
+function normalizeJourney(journey?: Partial<Journey>): Journey {
+  return {
+    ...createEmptyJourney(),
+    ...journey,
+    status: journey?.status ?? 'unset',
+    steps: [
+      journey?.steps?.[0] ?? emptyStepValue,
+      journey?.steps?.[1] ?? emptyStepValue,
+      journey?.steps?.[2] ?? emptyStepValue,
+    ],
+  };
+}
+
 function saveJourneys(): void {
   localStorage.setItem(storageKey, JSON.stringify(savedJourneys));
 }
 
 function getParticipantJourneys(participantId: string): ParticipantJourneys {
-  return savedJourneys[participantId] ?? createEmptyParticipantJourneys();
+  const journeys = savedJourneys[participantId];
+
+  return {
+    outbound: normalizeJourney(journeys?.outbound),
+    return: normalizeJourney(journeys?.return),
+  };
 }
 
 function setParticipantJourney(
@@ -161,8 +175,19 @@ function formatParticipantPopup(participant: Participant): string {
     <strong>${participant.lastName} ${participant.firstName}</strong>
     <span>${participant.city}</span>
     <span>${participant.phone}</span>
+    <span>${getStatusLabel(journey.status)}</span>
     <span>${activeMode === 'outbound' ? 'Aller' : 'Retour'} : ${dateLabel}</span>
   `;
+}
+
+function createParticipantIcon(color: string): L.DivIcon {
+  return L.divIcon({
+    className: 'participant-marker',
+    html: `<span aria-hidden="true" style="--participant-color: ${color}"></span>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12],
+  });
 }
 
 function addFestivalMarker(): void {
@@ -181,7 +206,7 @@ function addParticipantMarkers(items: Participant[]): void {
 
   items.forEach((participant) => {
     L.marker([participant.latitude, participant.longitude], {
-      icon: participantIcon,
+      icon: createParticipantIcon(participant.color),
       title: `${participant.firstName} ${participant.lastName}`,
     })
       .bindPopup(formatParticipantPopup(participant))
@@ -208,9 +233,19 @@ function buildCityOptions(selectedValue: string): string {
 function renderJourneyForm(participant: Participant): string {
   const journey = getParticipantJourneys(participant.id)[activeMode];
   const modeLabel = activeMode === 'outbound' ? 'aller' : 'retour';
+  const cannotEnterRoute = journey.status !== 'offer';
 
   return `
     <form class="journey-form" data-participant-id="${participant.id}">
+      <label>
+        Statut
+        <select name="status">
+          <option value="unset" ${journey.status === 'unset' ? 'selected' : ''}>Non renseigné</option>
+          <option value="offer" ${journey.status === 'offer' ? 'selected' : ''}>Propose un covoit</option>
+          <option value="search" ${journey.status === 'search' ? 'selected' : ''}>Cherche un covoit</option>
+        </select>
+      </label>
+
       <label>
         Date ${modeLabel}
         <input type="date" name="date" value="${journey.date}" />
@@ -218,20 +253,50 @@ function renderJourneyForm(participant: Participant): string {
 
       <label>
         Ville-étape 1
-        <select name="step-0">${buildCityOptions(journey.steps[0] ?? emptyStepValue)}</select>
+        <select name="step-0" ${cannotEnterRoute ? 'disabled' : ''}>
+          ${buildCityOptions(journey.steps[0] ?? emptyStepValue)}
+        </select>
       </label>
 
       <label>
         Ville-étape 2
-        <select name="step-1">${buildCityOptions(journey.steps[1] ?? emptyStepValue)}</select>
+        <select name="step-1" ${cannotEnterRoute ? 'disabled' : ''}>
+          ${buildCityOptions(journey.steps[1] ?? emptyStepValue)}
+        </select>
       </label>
 
       <label>
         Ville-étape 3
-        <select name="step-2">${buildCityOptions(journey.steps[2] ?? emptyStepValue)}</select>
+        <select name="step-2" ${cannotEnterRoute ? 'disabled' : ''}>
+          ${buildCityOptions(journey.steps[2] ?? emptyStepValue)}
+        </select>
       </label>
     </form>
   `;
+}
+
+function getStatusLabel(status: JourneyStatus): string {
+  if (status === 'offer') {
+    return 'Propose un covoit';
+  }
+
+  if (status === 'search') {
+    return 'Cherche un covoit';
+  }
+
+  return 'Statut non renseigné';
+}
+
+function getStatusIcon(status: JourneyStatus): string {
+  if (status === 'offer') {
+    return '<span class="status-icon status-icon--offer" aria-label="Propose un covoit" title="Propose un covoit">auto</span>';
+  }
+
+  if (status === 'search') {
+    return '<span class="status-icon status-icon--search" aria-label="Cherche un covoit" title="Cherche un covoit">main</span>';
+  }
+
+  return '<span class="status-icon status-icon--unset" aria-label="Statut non renseigné" title="Statut non renseigné">?</span>';
 }
 
 function renderParticipantList(items: Participant[]): void {
@@ -244,16 +309,27 @@ function renderParticipantList(items: Participant[]): void {
   list.innerHTML = items
     .map((participant) => {
       const isSelected = participant.id === selectedParticipantId;
+      const isEditing = participant.id === editingParticipantId;
       const journey = getParticipantJourneys(participant.id)[activeMode];
-      const hasJourney = journey.date || journey.steps.some(Boolean);
+      const hasJourney =
+        journey.status !== 'unset' || journey.date || journey.steps.some(Boolean);
 
       return `
         <li class="${isSelected ? 'is-selected' : ''}">
-          <button class="participant-button" type="button" data-participant-id="${participant.id}">
-            <strong>${participant.firstName} ${participant.lastName}</strong>
-            <span>${participant.city}${hasJourney ? ' · trajet renseigné' : ''}</span>
-          </button>
-          ${isSelected ? renderJourneyForm(participant) : ''}
+          <div class="participant-row">
+            <button class="participant-button" type="button" data-participant-id="${participant.id}">
+              <span class="participant-name">
+                <span class="participant-color" style="--participant-color: ${participant.color}"></span>
+                <strong>${participant.firstName} ${participant.lastName}</strong>
+                ${getStatusIcon(journey.status)}
+              </span>
+              <span>${participant.city}${hasJourney ? ' - renseignements saisis' : ''}</span>
+            </button>
+            <button class="edit-journey-button" type="button" data-participant-id="${participant.id}">
+              ${isEditing ? 'Fermer' : 'Renseigner'}
+            </button>
+          </div>
+          ${isEditing ? renderJourneyForm(participant) : ''}
         </li>
       `;
     })
@@ -289,7 +365,7 @@ function drawRoutes(items: Participant[]): void {
 
   items.forEach((participant) => {
     const journey = getParticipantJourneys(participant.id)[activeMode];
-    const hasRoute = journey.date || journey.steps.some(Boolean);
+    const hasRoute = journey.status === 'offer';
 
     if (!hasRoute) {
       return;
@@ -298,7 +374,7 @@ function drawRoutes(items: Participant[]): void {
     const isSelected = participant.id === selectedParticipantId;
 
     L.polyline(getRoutePoints(participant, activeMode), {
-      color: activeMode === 'outbound' ? '#2f6f8f' : '#7a5a2b',
+      color: participant.color,
       weight: isSelected ? 5 : 3,
       opacity: isSelected ? 0.9 : 0.45,
       dashArray: isSelected ? undefined : '6 8',
@@ -318,13 +394,18 @@ function updateParticipantJourneyFromForm(form: HTMLFormElement): void {
   }
 
   const formData = new FormData(form);
+  const status = String(formData.get('status') ?? 'unset') as JourneyStatus;
   const journey: Journey = {
+    status,
     date: String(formData.get('date') ?? ''),
-    steps: [
-      String(formData.get('step-0') ?? ''),
-      String(formData.get('step-1') ?? ''),
-      String(formData.get('step-2') ?? ''),
-    ],
+    steps:
+      status === 'offer'
+        ? [
+            String(formData.get('step-0') ?? ''),
+            String(formData.get('step-1') ?? ''),
+            String(formData.get('step-2') ?? ''),
+          ]
+        : [emptyStepValue, emptyStepValue, emptyStepValue],
   };
 
   setParticipantJourney(participantId, activeMode, journey);
@@ -339,6 +420,7 @@ function bindControls(): void {
 
   modeSelect?.addEventListener('change', () => {
     activeMode = modeSelect.value as JourneyMode;
+    editingParticipantId = null;
     addParticipantMarkers(participants);
     renderParticipantList(participants);
     drawRoutes(participants);
@@ -354,6 +436,24 @@ function bindControls(): void {
     }
 
     selectedParticipantId = button.dataset.participantId;
+    renderParticipantList(participants);
+    drawRoutes(participants);
+  });
+
+  list?.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '.edit-journey-button',
+    );
+
+    if (!button?.dataset.participantId) {
+      return;
+    }
+
+    selectedParticipantId = button.dataset.participantId;
+    editingParticipantId =
+      editingParticipantId === button.dataset.participantId
+        ? null
+        : button.dataset.participantId;
     renderParticipantList(participants);
     drawRoutes(participants);
   });

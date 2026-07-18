@@ -6,6 +6,7 @@ export type Participant = {
   latitude: number;
   longitude: number;
   phone: string;
+  color: string;
 };
 
 // Les champs prévus restent centralisés ici pour faciliter les futures évolutions
@@ -19,6 +20,7 @@ export const participants: Participant[] = [
     latitude: 50.6292,
     longitude: 3.0573,
     phone: '06 00 00 00 01',
+    color: '#2f6f8f',
   },
   {
     id: 'nora-bernard',
@@ -28,6 +30,7 @@ export const participants: Participant[] = [
     latitude: 48.1173,
     longitude: -1.6778,
     phone: '06 00 00 00 02',
+    color: '#8b5d33',
   },
   {
     id: 'hugo-petit',
@@ -37,6 +40,7 @@ export const participants: Participant[] = [
     latitude: 44.8378,
     longitude: -0.5792,
     phone: '06 00 00 00 03',
+    color: '#5d7c2f',
   },
   {
     id: 'ines-moreau',
@@ -46,6 +50,7 @@ export const participants: Participant[] = [
     latitude: 43.6047,
     longitude: 1.4442,
     phone: '06 00 00 00 04',
+    color: '#9a4f63',
   },
   {
     id: 'lucas-dubois',
@@ -55,6 +60,7 @@ export const participants: Participant[] = [
     latitude: 43.2965,
     longitude: 5.3698,
     phone: '06 00 00 00 05',
+    color: '#4864a8',
   },
   {
     id: 'lea-roux',
@@ -64,6 +70,7 @@ export const participants: Participant[] = [
     latitude: 43.7102,
     longitude: 7.262,
     phone: '06 00 00 00 06',
+    color: '#7b6aa8',
   },
   {
     id: 'adam-fournier',
@@ -73,6 +80,7 @@ export const participants: Participant[] = [
     latitude: 48.5734,
     longitude: 7.7521,
     phone: '06 00 00 00 07',
+    color: '#b16a38',
   },
   {
     id: 'manon-girard',
@@ -82,6 +90,7 @@ export const participants: Participant[] = [
     latitude: 47.2184,
     longitude: -1.5536,
     phone: '06 00 00 00 08',
+    color: '#3e8a64',
   },
   {
     id: 'ethan-leroy',
@@ -91,6 +100,7 @@ export const participants: Participant[] = [
     latitude: 48.8566,
     longitude: 2.3522,
     phone: '06 00 00 00 09',
+    color: '#7d6b34',
   },
   {
     id: 'sarah-simon',
@@ -100,5 +110,6 @@ export const participants: Participant[] = [
     latitude: 45.7772,
     longitude: 3.087,
     phone: '06 00 00 00 10',
+    color: '#b04b45',
   },
 ];
