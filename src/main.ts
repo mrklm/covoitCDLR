@@ -248,9 +248,9 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const festivalIcon = L.divIcon({
   className: 'festival-marker',
   html: '<span aria-hidden="true">CDLR</span>',
-  iconSize: [54, 54],
-  iconAnchor: [27, 27],
-  popupAnchor: [0, -25],
+  iconSize: [27, 27],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -13],
 });
 
 const participantLayer = L.layerGroup().addTo(map);

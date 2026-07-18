@@ -696,15 +696,15 @@ button:disabled {
 .festival-marker span {
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
-  border: 3px solid var(--surface);
+  width: 27px;
+  height: 27px;
+  border: 2px solid var(--surface);
   border-radius: 50%;
   background: var(--accent);
   color: #ffffff;
-  font-size: 0.74rem;
+  font-size: 0.52rem;
   font-weight: 800;
-  box-shadow: 0 10px 24px rgb(20 32 28 / 25%);
+  box-shadow: 0 6px 14px rgb(20 32 28 / 25%);
 }
 
 .participant-marker span {
