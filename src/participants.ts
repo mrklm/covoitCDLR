@@ -1,4 +1,5 @@
 export type Participant = {
+  id: string;
   firstName: string;
   lastName: string;
   city: string;
@@ -11,6 +12,7 @@ export type Participant = {
 // comme le rôle conducteur/passager, les horaires, les places et les remarques.
 export const participants: Participant[] = [
   {
+    id: 'camille-martin',
     firstName: 'Camille',
     lastName: 'Martin',
     city: 'Lille',
@@ -19,6 +21,7 @@ export const participants: Participant[] = [
     phone: '06 00 00 00 01',
   },
   {
+    id: 'nora-bernard',
     firstName: 'Nora',
     lastName: 'Bernard',
     city: 'Rennes',
@@ -27,6 +30,7 @@ export const participants: Participant[] = [
     phone: '06 00 00 00 02',
   },
   {
+    id: 'hugo-petit',
     firstName: 'Hugo',
     lastName: 'Petit',
     city: 'Bordeaux',
@@ -35,6 +39,7 @@ export const participants: Participant[] = [
     phone: '06 00 00 00 03',
   },
   {
+    id: 'ines-moreau',
     firstName: 'Ines',
     lastName: 'Moreau',
     city: 'Toulouse',
@@ -43,6 +48,7 @@ export const participants: Participant[] = [
     phone: '06 00 00 00 04',
   },
   {
+    id: 'lucas-dubois',
     firstName: 'Lucas',
     lastName: 'Dubois',
     city: 'Marseille',
@@ -51,6 +57,7 @@ export const participants: Participant[] = [
     phone: '06 00 00 00 05',
   },
   {
+    id: 'lea-roux',
     firstName: 'Lea',
     lastName: 'Roux',
     city: 'Nice',
@@ -59,6 +66,7 @@ export const participants: Participant[] = [
     phone: '06 00 00 00 06',
   },
   {
+    id: 'adam-fournier',
     firstName: 'Adam',
     lastName: 'Fournier',
     city: 'Strasbourg',
@@ -67,6 +75,7 @@ export const participants: Participant[] = [
     phone: '06 00 00 00 07',
   },
   {
+    id: 'manon-girard',
     firstName: 'Manon',
     lastName: 'Girard',
     city: 'Nantes',
@@ -75,6 +84,7 @@ export const participants: Participant[] = [
     phone: '06 00 00 00 08',
   },
   {
+    id: 'ethan-leroy',
     firstName: 'Ethan',
     lastName: 'Leroy',
     city: 'Paris',
@@ -83,6 +93,7 @@ export const participants: Participant[] = [
     phone: '06 00 00 00 09',
   },
   {
+    id: 'sarah-simon',
     firstName: 'Sarah',
     lastName: 'Simon',
     city: 'Clermont-Ferrand',

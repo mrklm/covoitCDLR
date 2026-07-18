@@ -20,14 +20,21 @@
 
     <main class="app-layout">
       <section class="map-panel" aria-label="Carte des participants">
+        <div class="map-toolbar" aria-label="Choix du trajet affiché">
+          <label for="journey-mode">Carte affichée</label>
+          <select id="journey-mode">
+            <option value="outbound">Allers</option>
+            <option value="return">Retours</option>
+          </select>
+        </div>
         <div id="map"></div>
       </section>
 
       <aside class="info-panel" aria-label="Informations participants">
         <h2>Participants</h2>
         <p>
-          Les marqueurs indiquent des salariés fictifs répartis en France.
-          Cliquez sur un point pour voir les coordonnées de démonstration.
+          Cliquez sur un nom pour renseigner les dates et les villes-étapes du
+          trajet sélectionné.
         </p>
         <ul id="participant-list" class="participant-list"></ul>
       </aside>
