@@ -91,8 +91,11 @@ const festivalLocation: {
 const cityOptions: CityOption[] = [
   { name: 'Aucune étape', latitude: 0, longitude: 0 },
   { name: 'Allériot', latitude: 46.8021, longitude: 4.9532 },
+  { name: 'Amiens', latitude: 49.8942, longitude: 2.2957 },
   { name: 'Angers', latitude: 47.4819, longitude: -0.5629 },
+  { name: 'Annecy', latitude: 45.8992, longitude: 6.1294 },
   { name: 'Avignon', latitude: 43.9493, longitude: 4.8055 },
+  { name: 'Bayonne', latitude: 43.4929, longitude: -1.4748 },
   { name: 'Besancon', latitude: 47.2602, longitude: 6.0123 },
   { name: 'Besançon', latitude: 47.2602, longitude: 6.0123 },
   { name: 'Bissey Sous Cruchaud', latitude: 46.7296, longitude: 4.6944 },
@@ -105,8 +108,13 @@ const cityOptions: CityOption[] = [
   { name: 'BOYER', latitude: 46.5985, longitude: 4.9036 },
   { name: 'Brains Sur Gée', latitude: 48.0111, longitude: -0.0216 },
   { name: 'Bracon', latitude: 46.9263, longitude: 5.8672 },
+  { name: 'Brest', latitude: 48.3904, longitude: -4.4861 },
+  { name: 'Caen', latitude: 49.1829, longitude: -0.3707 },
+  { name: 'Chambéry', latitude: 45.5646, longitude: 5.9178 },
+  { name: 'Chartres', latitude: 48.4439, longitude: 1.489 },
   { name: 'Clermont Ferrand', latitude: 45.787, longitude: 3.1127 },
   { name: 'Clermont-Ferrand', latitude: 45.787, longitude: 3.1127 },
+  { name: 'Colmar', latitude: 48.0794, longitude: 7.3585 },
   { name: "Collonges Au Mont D'Or", latitude: 45.8188, longitude: 4.8425 },
   { name: 'Dieulefit', latitude: 44.5354, longitude: 5.0685 },
   { name: 'Dijon', latitude: 47.3319, longitude: 5.0322 },
@@ -126,6 +134,8 @@ const cityOptions: CityOption[] = [
   { name: 'Lans', latitude: 46.7643, longitude: 4.9343 },
   { name: 'Lantenay', latitude: 47.3435, longitude: 4.8672 },
   { name: 'Le Bosc', latitude: 43.6985, longitude: 3.3896 },
+  { name: 'Le Havre', latitude: 49.4944, longitude: 0.1079 },
+  { name: 'Le Mans', latitude: 48.0061, longitude: 0.1996 },
   { name: 'Lépin-le-Lac', latitude: 45.5331, longitude: 5.7895 },
   { name: 'Lepin Le Lac', latitude: 45.5331, longitude: 5.7895 },
   { name: 'Les Salles Du Gardon', latitude: 44.1903, longitude: 4.0155 },
@@ -140,16 +150,23 @@ const cityOptions: CityOption[] = [
   { name: 'Mauves-Sur-Loire', latitude: 47.3146, longitude: -1.4019 },
   { name: 'Meyzieu', latitude: 45.7785, longitude: 5.0114 },
   { name: 'Montpellier', latitude: 43.611, longitude: 3.8767 },
+  { name: 'Mulhouse', latitude: 47.7508, longitude: 7.3359 },
+  { name: 'Nancy', latitude: 48.6921, longitude: 6.1844 },
   { name: 'Nantes', latitude: 47.2382, longitude: -1.5603 },
   { name: 'NANTES', latitude: 47.2382, longitude: -1.5603 },
+  { name: 'Nevers', latitude: 46.9896, longitude: 3.159 },
   { name: 'Nice', latitude: 43.7102, longitude: 7.262 },
   { name: 'Nîmes', latitude: 43.8322, longitude: 4.3429 },
   { name: 'Orleans', latitude: 47.9029, longitude: 1.9093 },
   { name: 'Paris', latitude: 48.8566, longitude: 2.3522 },
+  { name: 'Pau', latitude: 43.2951, longitude: -0.3708 },
+  { name: 'Perpignan', latitude: 42.6887, longitude: 2.8948 },
   { name: 'Poitiers', latitude: 46.5802, longitude: 0.3404 },
   { name: 'Quingey', latitude: 47.1115, longitude: 5.8819 },
   { name: 'Reims', latitude: 49.2583, longitude: 4.0317 },
   { name: 'Rennes', latitude: 48.1173, longitude: -1.6778 },
+  { name: 'Roanne', latitude: 46.0362, longitude: 4.0689 },
+  { name: 'Rouen', latitude: 49.4431, longitude: 1.0993 },
   { name: 'Saint Etienne', latitude: 45.4241, longitude: 4.3665 },
   { name: 'SAINT ETIENNE', latitude: 45.4241, longitude: 4.3665 },
   { name: 'Saint-Etienne', latitude: 45.4241, longitude: 4.3665 },
@@ -169,6 +186,7 @@ const cityOptions: CityOption[] = [
   { name: 'Valence', latitude: 44.9334, longitude: 4.8924 },
   { name: 'Vaulx En Velin', latitude: 45.7776, longitude: 4.925 },
   { name: 'Venerque', latitude: 43.4363, longitude: 1.4629 },
+  { name: 'Vichy', latitude: 46.1239, longitude: 3.4267 },
   { name: 'Villefranche-Sur-Saône', latitude: 45.9837, longitude: 4.726 },
   { name: 'Villeurbanne', latitude: 45.7719, longitude: 4.8898 },
   { name: 'Voiteur', latitude: 46.7431, longitude: 5.6014 },
@@ -456,7 +474,7 @@ function buildMissingCityOption(selectedValue: string): string {
     return '';
   }
 
-  return `<option value="${escapeHtml(selectedValue)}" selected>${escapeHtml(selectedValue)} - coordonnées à compléter</option>`;
+  return `<option value="${escapeHtml(selectedValue)}" selected>${escapeHtml(selectedValue)} - trajet à renseigner</option>`;
 }
 
 function hasSelectableCityValue(
@@ -601,7 +619,7 @@ function buildCityOptions(selectedValue: string): string {
       const value = city.name === 'Aucune étape' ? emptyStepValue : city.name;
       const selected = getCityKey(value) === selectedKey ? 'selected' : '';
       const coordinatesLabel =
-        value && !hasCityCoordinates(city) ? ' - coordonnées à compléter' : '';
+        value && !hasCityCoordinates(city) ? ' - trajet à renseigner' : '';
 
       return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(city.name + coordinatesLabel)}</option>`;
     })
@@ -623,7 +641,7 @@ function buildEndpointCityOptions(selectedValue: string): string {
       const selected =
         getCityKey(city.name) === selectedKey ? 'selected' : '';
       const coordinatesLabel = !hasCityCoordinates(city)
-        ? ' - coordonnées à compléter'
+        ? ' - trajet à renseigner'
         : '';
 
       return `<option value="${escapeHtml(city.name)}" ${selected}>${escapeHtml(city.name + coordinatesLabel)}</option>`;
@@ -810,7 +828,7 @@ function renderParticipantList(items: Participant[]): void {
               </span>
               <span>
                 ${participant.city}${hasJourney ? ' - renseignements saisis' : ''}
-                ${hasMapPoint ? '' : ' - coordonnées à compléter'}
+                ${hasMapPoint ? '' : ' - trajet à renseigner'}
               </span>
             </button>
             <button class="edit-journey-button" type="button" data-participant-id="${participant.id}">
