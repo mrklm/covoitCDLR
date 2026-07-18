@@ -546,29 +546,25 @@ async function loadParticipants(accessPassword: string | null): Promise<Particip
 }
 
 function formatParticipantPopup(participant: Participant): string {
-  const journey = getParticipantJourneys(participant.id)[activeMode];
-  const dateLabel = journey.date ? journey.date : 'Date non renseignée';
-  const endpointLabel =
-    activeMode === 'outbound' ? 'Départ' : 'Arrivée retour';
-  const endpointCity = journey.endpointCity || participant.city;
-
   return `
-    <strong>${participant.lastName} ${participant.firstName}</strong>
-    <span>${participant.city}</span>
-    <span>${participant.phone}</span>
-    <span>${getStatusLabel(journey.status)}</span>
-    <span>${endpointLabel} : ${endpointCity}</span>
-    <span>${activeMode === 'outbound' ? 'Aller' : 'Retour'} : ${dateLabel}</span>
+    <strong>${escapeHtml(participant.lastName)} ${escapeHtml(participant.firstName)}</strong>
+    <span>Ville : ${escapeHtml(participant.city)}</span>
+    <span>Téléphone : ${escapeHtml(participant.phone)}</span>
   `;
 }
 
-function createParticipantIcon(color: string): L.DivIcon {
+function getParticipantInitials(participant: Participant): string {
+  return `${participant.firstName.charAt(0)}${participant.lastName.charAt(0)}`
+    .toUpperCase();
+}
+
+function createParticipantIcon(participant: Participant): L.DivIcon {
   return L.divIcon({
     className: 'participant-marker',
-    html: `<span aria-hidden="true" style="--participant-color: ${color}"></span>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -12],
+    html: `<span aria-hidden="true" style="--participant-color: ${participant.color}">${escapeHtml(getParticipantInitials(participant))}</span>`,
+    iconSize: [27, 27],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -13],
   });
 }
 
@@ -585,14 +581,28 @@ function addFestivalMarker(): void {
 
 function addParticipantMarkers(items: Participant[]): void {
   participantLayer.clearLayers();
+  const visibleParticipants = items.filter(
+    (participant) =>
+      participant.latitude !== null && participant.longitude !== null,
+  );
+  const markerIndexesByCoordinates = new Map<string, number>();
 
-  items.forEach((participant) => {
+  visibleParticipants.forEach((participant) => {
     if (participant.latitude === null || participant.longitude === null) {
       return;
     }
 
-    L.marker([participant.latitude, participant.longitude], {
-      icon: createParticipantIcon(participant.color),
+    const coordinatesKey = `${participant.latitude.toFixed(5)},${participant.longitude.toFixed(5)}`;
+    const markerIndex = markerIndexesByCoordinates.get(coordinatesKey) ?? 0;
+    const markerPoint = map.latLngToLayerPoint([
+      participant.latitude,
+      participant.longitude,
+    ]);
+    markerPoint.y += markerIndex * 31;
+    markerIndexesByCoordinates.set(coordinatesKey, markerIndex + 1);
+
+    L.marker(map.layerPointToLatLng(markerPoint), {
+      icon: createParticipantIcon(participant),
       title: `${participant.firstName} ${participant.lastName}`,
     })
       .bindPopup(formatParticipantPopup(participant))
@@ -897,7 +907,8 @@ function drawRoutes(items: Participant[]): void {
       color: participant.color,
       weight: isSelected ? 5 : 3,
       opacity: isSelected ? 0.9 : 0.45,
-      dashArray: isSelected ? undefined : '6 8',
+      lineCap: 'round',
+      lineJoin: 'round',
     })
       .bindPopup(
         `<strong>${participant.firstName} ${participant.lastName}</strong><span>${activeMode === 'outbound' ? 'Aller' : 'Retour'}</span>`,
@@ -1253,4 +1264,9 @@ void initializeApp();
 // Leaflet doit recalculer sa taille lorsque le navigateur modifie le viewport.
 window.addEventListener('resize', () => {
   map.invalidateSize();
+  addParticipantMarkers(appParticipants);
+});
+
+map.on('zoomend', () => {
+  addParticipantMarkers(appParticipants);
 });

@@ -708,11 +708,17 @@ button:disabled {
 }
 
 .participant-marker span {
-  width: 18px;
-  height: 18px;
-  border: 3px solid var(--surface);
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 2px solid var(--surface);
   border-radius: 50%;
   background: var(--participant-color);
+  color: #ffffff;
+  font-size: 0.58rem;
+  font-weight: 900;
+  line-height: 1;
   box-shadow: 0 6px 16px rgb(32 36 42 / 24%);
 }
 
