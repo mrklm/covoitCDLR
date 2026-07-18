@@ -455,6 +455,15 @@ input {
   line-height: 1.55;
 }
 
+.source-notice {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent), var(--border) 55%);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent), var(--surface) 88%);
+  color: var(--text);
+  font-weight: 700;
+}
+
 .participant-list {
   display: grid;
   gap: 10px;
@@ -472,6 +481,11 @@ input {
 
 .participant-list li.is-selected {
   border-top-color: var(--accent);
+}
+
+.participant-list li.empty-list {
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .participant-row {

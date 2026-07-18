@@ -118,6 +118,7 @@ let appParticipants: Participant[] = demoParticipants;
 let selectedParticipantId = appParticipants[0]?.id ?? '';
 let editingParticipantId: string | null = null;
 let savedJourneys: SavedJourneys = {};
+let participantSourceNotice = '';
 
 const themes: ThemeName[] = [
   'sombre-midnight-garage',
@@ -374,9 +375,17 @@ function mapTechnicianToParticipant(
   };
 }
 
+function getFallbackParticipants(notice: string): Participant[] {
+  participantSourceNotice = notice;
+
+  return import.meta.env.DEV ? demoParticipants : [];
+}
+
 async function loadParticipants(accessPassword: string | null): Promise<Participant[]> {
   if (!isSupabaseConfigured || !supabase || !accessPassword) {
-    return demoParticipants;
+    return getFallbackParticipants(
+      'Supabase n’est pas configuré pour cette version. Vérifie les variables GitHub Pages.',
+    );
   }
 
   const { data, error } = await supabase.rpc('get_technicians', {
@@ -384,15 +393,25 @@ async function loadParticipants(accessPassword: string | null): Promise<Particip
   });
 
   if (error || !data) {
-    console.warn('Chargement des techniciens impossible, données démo utilisées.', error);
-    return demoParticipants;
+    console.warn('Chargement des techniciens impossible.', error);
+    return getFallbackParticipants(
+      'Impossible de charger les techniciens depuis Supabase. Vérifie la fonction get_technicians et le mot de passe.',
+    );
   }
 
   const remoteParticipants = (data as TechnicianRow[]).map(
     mapTechnicianToParticipant,
   );
 
-  return remoteParticipants.length > 0 ? remoteParticipants : demoParticipants;
+  if (remoteParticipants.length === 0) {
+    return getFallbackParticipants(
+      'Supabase répond, mais la table technicians ne contient aucun contact.',
+    );
+  }
+
+  participantSourceNotice = '';
+
+  return remoteParticipants;
 }
 
 function formatParticipantPopup(participant: Participant): string {
@@ -614,8 +633,19 @@ function getStatusIcon(status: JourneyStatus): string {
 
 function renderParticipantList(items: Participant[]): void {
   const list = document.querySelector<HTMLUListElement>('#participant-list');
+  const notice = document.querySelector<HTMLElement>('#participant-source-notice');
 
   if (!list) {
+    return;
+  }
+
+  if (notice) {
+    notice.textContent = participantSourceNotice;
+    notice.hidden = !participantSourceNotice;
+  }
+
+  if (items.length === 0) {
+    list.innerHTML = '<li class="empty-list">Aucun participant à afficher.</li>';
     return;
   }
 
