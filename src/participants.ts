@@ -3,8 +3,8 @@ export type Participant = {
   firstName: string;
   lastName: string;
   city: string;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   phone: string;
   color: string;
 };

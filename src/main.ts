@@ -1,7 +1,10 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
-import { participants, type Participant } from './participants';
+import {
+  participants as demoParticipants,
+  type Participant,
+} from './participants';
 import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 type JourneyMode = 'outbound' | 'return';
@@ -53,6 +56,17 @@ type JourneyRow = {
   steps: unknown;
 };
 
+type TechnicianRow = {
+  id: string;
+  last_name: string;
+  first_name: string;
+  city: string;
+  latitude: number | null;
+  longitude: number | null;
+  phone: string;
+  color: string | null;
+};
+
 const storageKey = 'covoitcdlr-journeys';
 const themeStorageKey = 'covoitcdlr-theme';
 const accessStorageKey = 'covoitcdlr-access-granted';
@@ -100,7 +114,8 @@ const cityOptions: CityOption[] = [
 
 const franceCenter: L.LatLngExpression = [46.8, 2.4];
 let activeMode: JourneyMode = 'outbound';
-let selectedParticipantId = participants[0]?.id ?? '';
+let appParticipants: Participant[] = demoParticipants;
+let selectedParticipantId = appParticipants[0]?.id ?? '';
 let editingParticipantId: string | null = null;
 let savedJourneys: SavedJourneys = {};
 
@@ -121,6 +136,21 @@ const themes: ThemeName[] = [
   'pouet-citron-qui-pique',
   'pouet-barbie-apocalypse',
   'pouet-compagnie-creole',
+];
+
+const participantColors = [
+  '#2f6f8f',
+  '#8b5d33',
+  '#5d7c2f',
+  '#9a4f63',
+  '#4864a8',
+  '#7b6aa8',
+  '#b16a38',
+  '#3e8a64',
+  '#7d6b34',
+  '#b04b45',
+  '#5a8792',
+  '#a36f9b',
 ];
 
 const map = L.map('map', {
@@ -289,8 +319,80 @@ function setParticipantJourney(
   void saveJourneyToSupabase(participantId, mode, journey);
 }
 
+function getParticipantCityOptions(): CityOption[] {
+  return appParticipants
+    .filter(
+      (participant) =>
+        participant.latitude !== null && participant.longitude !== null,
+    )
+    .map((participant) => ({
+      name: participant.city,
+      latitude: participant.latitude as number,
+      longitude: participant.longitude as number,
+    }));
+}
+
+function getSelectableCities(includeEmptyOption: boolean): CityOption[] {
+  const cities = includeEmptyOption ? [...cityOptions] : cityOptions.slice(1);
+
+  [...cities, ...getParticipantCityOptions()].forEach((city) => {
+    if (!cities.some((existingCity) => existingCity.name === city.name)) {
+      cities.push(city);
+    }
+  });
+
+  return cities.sort((cityA, cityB) => {
+    if (cityA.name === 'Aucune étape') {
+      return -1;
+    }
+
+    if (cityB.name === 'Aucune étape') {
+      return 1;
+    }
+
+    return cityA.name.localeCompare(cityB.name, 'fr');
+  });
+}
+
 function findCityByName(cityName: string): CityOption | undefined {
-  return cityOptions.find((city) => city.name === cityName);
+  return getSelectableCities(false).find((city) => city.name === cityName);
+}
+
+function mapTechnicianToParticipant(
+  technician: TechnicianRow,
+  index: number,
+): Participant {
+  return {
+    id: technician.id,
+    firstName: technician.first_name,
+    lastName: technician.last_name,
+    city: technician.city,
+    latitude: technician.latitude,
+    longitude: technician.longitude,
+    phone: technician.phone,
+    color: technician.color ?? participantColors[index % participantColors.length],
+  };
+}
+
+async function loadParticipants(accessPassword: string | null): Promise<Participant[]> {
+  if (!isSupabaseConfigured || !supabase || !accessPassword) {
+    return demoParticipants;
+  }
+
+  const { data, error } = await supabase.rpc('get_technicians', {
+    access_password: accessPassword,
+  });
+
+  if (error || !data) {
+    console.warn('Chargement des techniciens impossible, données démo utilisées.', error);
+    return demoParticipants;
+  }
+
+  const remoteParticipants = (data as TechnicianRow[]).map(
+    mapTechnicianToParticipant,
+  );
+
+  return remoteParticipants.length > 0 ? remoteParticipants : demoParticipants;
 }
 
 function formatParticipantPopup(participant: Participant): string {
@@ -335,6 +437,10 @@ function addParticipantMarkers(items: Participant[]): void {
   participantLayer.clearLayers();
 
   items.forEach((participant) => {
+    if (participant.latitude === null || participant.longitude === null) {
+      return;
+    }
+
     L.marker([participant.latitude, participant.longitude], {
       icon: createParticipantIcon(participant.color),
       title: `${participant.firstName} ${participant.lastName}`,
@@ -342,15 +448,15 @@ function addParticipantMarkers(items: Participant[]): void {
       .bindPopup(formatParticipantPopup(participant))
       .on('click', () => {
         selectedParticipantId = participant.id;
-        renderParticipantList(participants);
-        drawRoutes(participants);
+        renderParticipantList(appParticipants);
+        drawRoutes(appParticipants);
       })
       .addTo(participantLayer);
   });
 }
 
 function buildCityOptions(selectedValue: string): string {
-  return cityOptions
+  return getSelectableCities(true)
     .map((city) => {
       const value = city.name === 'Aucune étape' ? emptyStepValue : city.name;
       const selected = value === selectedValue ? 'selected' : '';
@@ -361,8 +467,7 @@ function buildCityOptions(selectedValue: string): string {
 }
 
 function buildEndpointCityOptions(selectedValue: string): string {
-  return cityOptions
-    .filter((city) => city.name !== 'Aucune étape')
+  return getSelectableCities(false)
     .map((city) => {
       const selected = city.name === selectedValue ? 'selected' : '';
 
@@ -519,6 +624,8 @@ function renderParticipantList(items: Participant[]): void {
       const isSelected = participant.id === selectedParticipantId;
       const isEditing = participant.id === editingParticipantId;
       const journey = getParticipantJourneys(participant.id)[activeMode];
+      const hasMapPoint =
+        participant.latitude !== null && participant.longitude !== null;
       const hasJourney =
         journey.status !== 'unset' ||
         journey.date ||
@@ -534,7 +641,10 @@ function renderParticipantList(items: Participant[]): void {
                 <strong>${participant.firstName} ${participant.lastName}</strong>
                 ${getStatusIcon(journey.status)}
               </span>
-              <span>${participant.city}${hasJourney ? ' - renseignements saisis' : ''}</span>
+              <span>
+                ${participant.city}${hasJourney ? ' - renseignements saisis' : ''}
+                ${hasMapPoint ? '' : ' - coordonnées à compléter'}
+              </span>
             </button>
             <button class="edit-journey-button" type="button" data-participant-id="${participant.id}">
               ${isEditing ? 'Fermer' : 'Renseigner'}
@@ -554,9 +664,11 @@ function getRoutePoints(participant: Participant, mode: JourneyMode): L.LatLngEx
     .map(findCityByName)
     .filter((city): city is CityOption => Boolean(city));
 
-  const participantPoint: L.LatLngExpression = endpointCity
+  const participantPoint: L.LatLngExpression | null = endpointCity
     ? [endpointCity.latitude, endpointCity.longitude]
-    : [participant.latitude, participant.longitude];
+    : participant.latitude !== null && participant.longitude !== null
+      ? [participant.latitude, participant.longitude]
+      : null;
   const festivalPoint: L.LatLngExpression = [
     festivalLocation.latitude,
     festivalLocation.longitude,
@@ -565,6 +677,10 @@ function getRoutePoints(participant: Participant, mode: JourneyMode): L.LatLngEx
     city.latitude,
     city.longitude,
   ]);
+
+  if (!participantPoint) {
+    return [];
+  }
 
   return mode === 'outbound'
     ? [participantPoint, ...stepPoints, festivalPoint]
@@ -584,7 +700,13 @@ function drawRoutes(items: Participant[]): void {
 
     const isSelected = participant.id === selectedParticipantId;
 
-    L.polyline(getRoutePoints(participant, activeMode), {
+    const routePoints = getRoutePoints(participant, activeMode);
+
+    if (routePoints.length < 2) {
+      return;
+    }
+
+    L.polyline(routePoints, {
       color: participant.color,
       weight: isSelected ? 5 : 3,
       opacity: isSelected ? 0.9 : 0.45,
@@ -627,9 +749,9 @@ function updateParticipantJourneyFromForm(form: HTMLFormElement): void {
   }
 
   setParticipantJourney(participantId, activeMode, readJourneyFromForm(form));
-  addParticipantMarkers(participants);
-  renderParticipantList(participants);
-  drawRoutes(participants);
+  addParticipantMarkers(appParticipants);
+  renderParticipantList(appParticipants);
+  drawRoutes(appParticipants);
 }
 
 function updateStepCountFromButton(button: HTMLButtonElement): void {
@@ -652,9 +774,9 @@ function updateStepCountFromButton(button: HTMLButtonElement): void {
   }
 
   setParticipantJourney(participantId, activeMode, journey);
-  addParticipantMarkers(participants);
-  renderParticipantList(participants);
-  drawRoutes(participants);
+  addParticipantMarkers(appParticipants);
+  renderParticipantList(appParticipants);
+  drawRoutes(appParticipants);
 }
 
 function bindControls(): void {
@@ -664,9 +786,9 @@ function bindControls(): void {
   modeSelect?.addEventListener('change', () => {
     activeMode = modeSelect.value as JourneyMode;
     editingParticipantId = null;
-    addParticipantMarkers(participants);
-    renderParticipantList(participants);
-    drawRoutes(participants);
+    addParticipantMarkers(appParticipants);
+    renderParticipantList(appParticipants);
+    drawRoutes(appParticipants);
   });
 
   list?.addEventListener('click', (event) => {
@@ -688,8 +810,8 @@ function bindControls(): void {
     }
 
     selectedParticipantId = button.dataset.participantId;
-    renderParticipantList(participants);
-    drawRoutes(participants);
+    renderParticipantList(appParticipants);
+    drawRoutes(appParticipants);
   });
 
   list?.addEventListener('click', (event) => {
@@ -706,8 +828,8 @@ function bindControls(): void {
       editingParticipantId === button.dataset.participantId
         ? null
         : button.dataset.participantId;
-    renderParticipantList(participants);
-    drawRoutes(participants);
+    renderParticipantList(appParticipants);
+    drawRoutes(appParticipants);
   });
 
   list?.addEventListener('change', (event) => {
@@ -833,41 +955,47 @@ function unlockAccessGate(): void {
   document.body.classList.remove('access-locked');
 }
 
-function bindAccessGate(): void {
+function bindAccessGate(): Promise<string | null> {
   const gate = document.querySelector<HTMLElement>('#access-gate');
   const form = document.querySelector<HTMLFormElement>('#access-form');
   const input = document.querySelector<HTMLInputElement>('#access-password');
   const error = document.querySelector<HTMLElement>('#access-error');
+  const savedPassword = sessionStorage.getItem(`${accessStorageKey}-password`);
 
   if (!gate || !form || !input) {
-    return;
+    return Promise.resolve(null);
   }
 
-  if (sessionStorage.getItem(accessStorageKey) === 'true') {
+  if (sessionStorage.getItem(accessStorageKey) === 'true' && savedPassword) {
     unlockAccessGate();
-    return;
+    return Promise.resolve(savedPassword);
   }
 
   document.body.classList.add('access-locked');
   input.focus();
 
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
+  return new Promise((resolve) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
 
-    const hash = await hashText(input.value);
+      const password = input.value;
+      const hash = await hashText(password);
 
-    if (hash === accessPasswordHash) {
-      sessionStorage.setItem(accessStorageKey, 'true');
-      input.value = '';
-      unlockAccessGate();
-      return;
-    }
+      if (hash === accessPasswordHash) {
+        sessionStorage.setItem(accessStorageKey, 'true');
+        sessionStorage.setItem(`${accessStorageKey}-password`, password);
+        input.value = '';
+        unlockAccessGate();
+        resolve(password);
+        return;
+      }
 
-    if (error) {
-      error.hidden = false;
-    }
+      if (error) {
+        error.hidden = false;
+      }
 
-    input.select();
+      input.select();
+    });
   });
 }
 
@@ -888,9 +1016,9 @@ function applyRemoteJourneyRow(row: JourneyRow): void {
   };
 
   saveJourneys();
-  addParticipantMarkers(participants);
-  renderParticipantList(participants);
-  drawRoutes(participants);
+  addParticipantMarkers(appParticipants);
+  renderParticipantList(appParticipants);
+  drawRoutes(appParticipants);
 }
 
 function subscribeToRemoteJourneys(): void {
@@ -919,13 +1047,15 @@ function subscribeToRemoteJourneys(): void {
 }
 
 async function initializeApp(): Promise<void> {
-  bindAccessGate();
+  const accessPassword = await bindAccessGate();
+  appParticipants = await loadParticipants(accessPassword);
+  selectedParticipantId = appParticipants[0]?.id ?? '';
   savedJourneys = await loadSavedJourneys();
 
   addFestivalMarker();
-  addParticipantMarkers(participants);
-  renderParticipantList(participants);
-  drawRoutes(participants);
+  addParticipantMarkers(appParticipants);
+  renderParticipantList(appParticipants);
+  drawRoutes(appParticipants);
   bindControls();
   bindHelpOptions();
   subscribeToRemoteJourneys();
