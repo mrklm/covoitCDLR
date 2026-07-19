@@ -806,9 +806,14 @@ function getStatusIcon(status: JourneyStatus): string {
 function renderParticipantList(items: Participant[]): void {
   const list = document.querySelector<HTMLUListElement>('#participant-list');
   const notice = document.querySelector<HTMLElement>('#participant-source-notice');
+  const title = document.querySelector<HTMLElement>('#participants-title');
 
   if (!list) {
     return;
+  }
+
+  if (title) {
+    title.textContent = `Participants (${items.length})`;
   }
 
   if (notice) {
