@@ -22,6 +22,8 @@ Pour renseigner un trajet, choisissez une personne dans la liste puis cliquez su
 
 Vous pouvez indiquer si la personne propose un covoit ou cherche une place. Si elle cherche une place, aucun itineraire n'est dessine sur la carte. Si elle propose un covoit, vous pouvez renseigner la date et les villes-etapes.
 
+Si une ville manque, l'option `+ Ajouter une ville...` ouvre un formulaire de recherche. L'application utilise l'API officielle `geo.api.gouv.fr` pour recuperer les coordonnees GPS, puis enregistre la ville dans Supabase pour tous les utilisateurs.
+
 Le menu au-dessus de la carte permet de passer des trajets aller aux trajets retour.
 
 Pour l'aller, la ville de depart est la ville de la personne par defaut, mais elle peut etre modifiee. La ville d'arrivee est toujours Chalon-sur-Saone.
@@ -175,6 +177,19 @@ participant_id + journey_mode
 ```
 
 Cela permet d'avoir un trajet aller et un trajet retour par personne.
+
+### Villes personnalisees
+
+La table `public.custom_cities` contient les villes ajoutees depuis l'interface :
+
+- `id`
+- `name`
+- `postal_code`
+- `latitude`
+- `longitude`
+- `created_at`
+
+Ces villes completent la liste integree dans le code et sont partagees entre utilisateurs.
 
 ## Architecture frontend
 

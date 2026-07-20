@@ -179,6 +179,47 @@
     </div>
 
     <div
+      id="city-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="city-modal-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-city-close></div>
+      <section class="modal-panel city-modal-panel">
+        <header class="modal-header">
+          <h2 id="city-modal-title">Ajouter une ville</h2>
+          <button class="modal-close-button" type="button" data-city-close>
+            Fermer
+          </button>
+        </header>
+        <form id="city-form" class="city-form">
+          <p>
+            Saisissez une ville. Le code postal est conseillé pour éviter les
+            homonymes.
+          </p>
+          <label>
+            Ville
+            <input id="city-name" name="city-name" type="text" required />
+          </label>
+          <label>
+            Code postal
+            <input
+              id="city-postal-code"
+              name="city-postal-code"
+              type="text"
+              inputmode="numeric"
+              maxlength="5"
+            />
+          </label>
+          <button type="submit">Rechercher</button>
+        </form>
+        <div id="city-search-result" class="city-search-result" hidden></div>
+      </section>
+    </div>
+
+    <div
       id="help-options-modal"
       class="modal"
       role="dialog"
@@ -253,6 +294,11 @@
             l'arrivée est Chalon-sur-Saône. Pour le retour, le départ est
             Chalon-sur-Saône et l'arrivée est la ville de la personne par
             défaut. Les villes modifiables peuvent être changées.
+          </p>
+          <p>
+            Si une ville manque dans une liste, choisissez `+ Ajouter une
+            ville...`, recherchez-la avec son code postal si besoin, puis
+            validez le résultat.
           </p>
           <p>
             Les données sont enregistrées automatiquement et partagées avec les

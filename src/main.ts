@@ -31,6 +31,7 @@ type CityOption = {
   name: string;
   latitude: number | null;
   longitude: number | null;
+  postalCode?: string;
 };
 
 type Journey = {
@@ -69,7 +70,30 @@ type TechnicianRow = {
   color: string | null;
 };
 
+type CustomCityRow = {
+  id: string;
+  name: string;
+  postal_code: string | null;
+  latitude: number;
+  longitude: number;
+};
+
+type GeoApiCommune = {
+  nom: string;
+  codesPostaux?: string[];
+  centre?: {
+    coordinates?: [number, number];
+  };
+};
+
+type PendingCityTarget = {
+  participantId: string;
+  mode: JourneyMode;
+  fieldName: string;
+} | null;
+
 const storageKey = 'covoitcdlr-journeys';
+const customCitiesStorageKey = 'covoitcdlr-custom-cities';
 const themeStorageKey = 'covoitcdlr-theme';
 const accessStorageKey = 'covoitcdlr-access-granted';
 const accessPasswordHash =
@@ -78,6 +102,7 @@ const emptyStepValue = '';
 const defaultStepCount = 3;
 const maxStepCount = 8;
 const maxMessageLength = 300;
+const addCityValue = '__add-city__';
 
 const festivalLocation: {
   label: string;
@@ -201,6 +226,8 @@ let appParticipants: Participant[] = demoParticipants;
 let selectedParticipantId = appParticipants[0]?.id ?? '';
 let editingParticipantId: string | null = null;
 let savedJourneys: SavedJourneys = {};
+let customCities: CityOption[] = [];
+let pendingCityTarget: PendingCityTarget = null;
 let participantSourceNotice = '';
 let activeMobileView: 'map' | 'participants' = 'map';
 
@@ -449,6 +476,111 @@ function setParticipantJourney(
   void saveJourneyToSupabase(participantId, mode, journey);
 }
 
+function normalizeCustomCity(city: CityOption): CityOption {
+  return {
+    name: city.name.trim(),
+    postalCode: city.postalCode?.trim() ?? '',
+    latitude: city.latitude,
+    longitude: city.longitude,
+  };
+}
+
+function mapCustomCityRow(row: CustomCityRow): CityOption {
+  return normalizeCustomCity({
+    name: row.name,
+    postalCode: row.postal_code ?? '',
+    latitude: row.latitude,
+    longitude: row.longitude,
+  });
+}
+
+function getCustomCityId(city: CityOption): string {
+  const postalCode = city.postalCode ? `-${city.postalCode}` : '';
+
+  return `${getCityKey(city.name)}${postalCode}`.replace(/\s+/g, '-');
+}
+
+function loadLocalCustomCities(): CityOption[] {
+  const rawValue = localStorage.getItem(customCitiesStorageKey);
+
+  if (!rawValue) {
+    return [];
+  }
+
+  try {
+    return (JSON.parse(rawValue) as CityOption[]).map(normalizeCustomCity);
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalCustomCities(cities: CityOption[]): void {
+  localStorage.setItem(customCitiesStorageKey, JSON.stringify(cities));
+}
+
+function mergeCustomCities(cities: CityOption[]): CityOption[] {
+  const citiesByKey = new Map<string, CityOption>();
+
+  cities.forEach((city) => {
+    const normalizedCity = normalizeCustomCity(city);
+    const cityKey = getCustomCityId(normalizedCity);
+
+    if (normalizedCity.name && hasCityCoordinates(normalizedCity)) {
+      citiesByKey.set(cityKey, normalizedCity);
+    }
+  });
+
+  return Array.from(citiesByKey.values()).sort((cityA, cityB) =>
+    cityA.name.localeCompare(cityB.name, 'fr'),
+  );
+}
+
+async function loadCustomCities(): Promise<CityOption[]> {
+  const localCities = loadLocalCustomCities();
+
+  if (!isSupabaseConfigured || !supabase) {
+    return localCities;
+  }
+
+  const { data, error } = await supabase
+    .from('custom_cities')
+    .select('id, name, postal_code, latitude, longitude')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.warn('Chargement des villes personnalisées impossible.', error);
+    return localCities;
+  }
+
+  const remoteCities = (data as CustomCityRow[]).map(mapCustomCityRow);
+  const mergedCities = mergeCustomCities([...localCities, ...remoteCities]);
+  saveLocalCustomCities(mergedCities);
+
+  return mergedCities;
+}
+
+async function saveCustomCity(city: CityOption): Promise<void> {
+  const normalizedCity = normalizeCustomCity(city);
+  customCities = mergeCustomCities([...customCities, normalizedCity]);
+  saveLocalCustomCities(customCities);
+
+  if (!isSupabaseConfigured || !supabase || !hasCityCoordinates(normalizedCity)) {
+    return;
+  }
+
+  const { error } = await supabase.from('custom_cities').upsert({
+    id: getCustomCityId(normalizedCity),
+    name: normalizedCity.name,
+    postal_code: normalizedCity.postalCode ?? '',
+    latitude: normalizedCity.latitude,
+    longitude: normalizedCity.longitude,
+  });
+
+  if (error) {
+    console.warn('Sauvegarde de la ville personnalisée impossible.', error);
+  }
+}
+
 function getParticipantCityOptions(): CityOption[] {
   return appParticipants.map((participant) => ({
     name: participant.city,
@@ -470,6 +602,7 @@ function getSelectableCities(includeEmptyOption: boolean): CityOption[] {
   const citiesByKey = new Map<string, CityOption>();
   const allCities = [
     ...(includeEmptyOption ? cityOptions : cityOptions.slice(1)),
+    ...customCities,
     ...getParticipantCityOptions(),
   ];
 
@@ -698,6 +831,8 @@ function buildCityOptions(selectedValue: string): string {
     : buildMissingCityOption(selectedValue);
   const selectedKey = getCityKey(selectedValue);
 
+  const addCityOption = `<option value="${addCityValue}">+ Ajouter une ville...</option>`;
+
   return (
     missingSelectedOption +
     cities
@@ -709,7 +844,8 @@ function buildCityOptions(selectedValue: string): string {
 
       return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(city.name + coordinatesLabel)}</option>`;
     })
-    .join('')
+    .join('') +
+    addCityOption
   );
 }
 
@@ -719,6 +855,8 @@ function buildEndpointCityOptions(selectedValue: string): string {
     ? ''
     : buildMissingCityOption(selectedValue);
   const selectedKey = getCityKey(selectedValue);
+
+  const addCityOption = `<option value="${addCityValue}">+ Ajouter une ville...</option>`;
 
   return (
     missingSelectedOption +
@@ -732,7 +870,8 @@ function buildEndpointCityOptions(selectedValue: string): string {
 
       return `<option value="${escapeHtml(city.name)}" ${selected}>${escapeHtml(city.name + coordinatesLabel)}</option>`;
     })
-    .join('')
+    .join('') +
+    addCityOption
   );
 }
 
@@ -1260,6 +1399,189 @@ function openMessageDetailModal(participantId: string): void {
   document.body.classList.add('modal-open');
 }
 
+function closeCityModal(): void {
+  const modal = document.querySelector<HTMLElement>('#city-modal');
+  const result = document.querySelector<HTMLElement>('#city-search-result');
+  const form = document.querySelector<HTMLFormElement>('#city-form');
+
+  if (!modal) {
+    return;
+  }
+
+  modal.hidden = true;
+  pendingCityTarget = null;
+  result?.replaceChildren();
+
+  if (result) {
+    result.hidden = true;
+  }
+
+  form?.reset();
+  document.body.classList.remove('modal-open');
+}
+
+function openCityModal(participantId: string, fieldName: string): void {
+  const modal = document.querySelector<HTMLElement>('#city-modal');
+  const cityNameInput = document.querySelector<HTMLInputElement>('#city-name');
+  const result = document.querySelector<HTMLElement>('#city-search-result');
+
+  if (!modal || !cityNameInput) {
+    return;
+  }
+
+  pendingCityTarget = {
+    participantId,
+    mode: activeMode,
+    fieldName,
+  };
+
+  result?.replaceChildren();
+
+  if (result) {
+    result.hidden = true;
+  }
+
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+  cityNameInput.focus();
+}
+
+function formatCityResultLabel(city: CityOption): string {
+  const postalCode = city.postalCode ? ` (${city.postalCode})` : '';
+
+  return `${city.name}${postalCode}`;
+}
+
+async function searchCityFromForm(form: HTMLFormElement): Promise<void> {
+  const result = document.querySelector<HTMLElement>('#city-search-result');
+  const formData = new FormData(form);
+  const cityName = String(formData.get('city-name') ?? '').trim();
+  const postalCode = String(formData.get('city-postal-code') ?? '').trim();
+
+  if (!result || !cityName) {
+    return;
+  }
+
+  result.hidden = false;
+  result.innerHTML = '<p>Recherche en cours...</p>';
+
+  const params = new URLSearchParams({
+    nom: cityName,
+    fields: 'nom,codesPostaux,centre',
+    boost: 'population',
+    limit: '5',
+  });
+
+  if (postalCode) {
+    params.set('codePostal', postalCode);
+  }
+
+  try {
+    const response = await fetch(`https://geo.api.gouv.fr/communes?${params}`);
+
+    if (!response.ok) {
+      throw new Error(`Erreur API ${response.status}`);
+    }
+
+    const data = (await response.json()) as GeoApiCommune[];
+    const cities = data
+      .map<CityOption | null>((city) => {
+        const coordinates = city.centre?.coordinates;
+
+        if (!coordinates) {
+          return null;
+        }
+
+        return {
+          name: city.nom,
+          postalCode: postalCode || city.codesPostaux?.[0] || '',
+          latitude: coordinates[1],
+          longitude: coordinates[0],
+        };
+      })
+      .filter((city): city is CityOption => Boolean(city));
+
+    if (cities.length === 0) {
+      result.innerHTML =
+        '<p>Aucune ville trouvée. Vérifiez le nom ou ajoutez le code postal.</p>';
+      return;
+    }
+
+    result.innerHTML = `
+      <p>Choisissez la ville à ajouter :</p>
+      <div class="city-result-list">
+        ${cities
+          .map(
+            (city) => `
+              <button
+                type="button"
+                data-city-result
+                data-city-name="${escapeHtml(city.name)}"
+                data-city-postal-code="${escapeHtml(city.postalCode ?? '')}"
+                data-city-latitude="${city.latitude}"
+                data-city-longitude="${city.longitude}"
+              >
+                <strong>${escapeHtml(formatCityResultLabel(city))}</strong>
+                <span>${city.latitude?.toFixed(4)}, ${city.longitude?.toFixed(4)}</span>
+              </button>
+            `,
+          )
+          .join('')}
+      </div>
+    `;
+  } catch (error) {
+    console.warn('Recherche de ville impossible.', error);
+    result.innerHTML =
+      '<p>Impossible de rechercher la ville pour le moment. Réessayez dans quelques instants.</p>';
+  }
+}
+
+function setPendingTargetCity(cityName: string): void {
+  if (!pendingCityTarget) {
+    return;
+  }
+
+  const journey = getParticipantJourneys(pendingCityTarget.participantId)[
+    pendingCityTarget.mode
+  ];
+  const nextJourney = normalizeJourney({ ...journey });
+
+  if (pendingCityTarget.fieldName === 'endpoint-city') {
+    nextJourney.endpointCity = cityName;
+  } else if (pendingCityTarget.fieldName.startsWith('step-')) {
+    const stepIndex = Number(pendingCityTarget.fieldName.replace('step-', ''));
+
+    if (Number.isInteger(stepIndex) && stepIndex >= 0) {
+      nextJourney.steps = [...nextJourney.steps];
+      nextJourney.steps[stepIndex] = cityName;
+    }
+  }
+
+  setParticipantJourney(pendingCityTarget.participantId, pendingCityTarget.mode, nextJourney);
+  renderParticipantList(appParticipants);
+  drawRoutes(appParticipants);
+  renderMessageBanner(appParticipants);
+}
+
+async function addCityFromResult(button: HTMLButtonElement): Promise<void> {
+  const latitude = Number(button.dataset.cityLatitude);
+  const longitude = Number(button.dataset.cityLongitude);
+  const city: CityOption = {
+    name: button.dataset.cityName ?? '',
+    postalCode: button.dataset.cityPostalCode ?? '',
+    latitude,
+    longitude,
+  };
+
+  if (!city.name || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+    return;
+  }
+
+  await saveCustomCity(city);
+  setPendingTargetCity(city.name);
+  closeCityModal();
+}
+
 function bindControls(): void {
   const modeSelect = document.querySelector<HTMLSelectElement>('#journey-mode');
   const list = document.querySelector<HTMLUListElement>('#participant-list');
@@ -1267,6 +1589,8 @@ function bindControls(): void {
   const messageForm = document.querySelector<HTMLFormElement>('#message-form');
   const messageTextarea =
     document.querySelector<HTMLTextAreaElement>('#message-text');
+  const cityForm = document.querySelector<HTMLFormElement>('#city-form');
+  const cityResult = document.querySelector<HTMLElement>('#city-search-result');
 
   setMobileView(activeMobileView);
 
@@ -1349,6 +1673,32 @@ function bindControls(): void {
   });
 
   list?.addEventListener('change', (event) => {
+    const changedSelect = (event.target as HTMLElement).closest<HTMLSelectElement>(
+      'select[name="endpoint-city"], select[name^="step-"]',
+    );
+
+    if (changedSelect?.value === addCityValue) {
+      const form = changedSelect.closest<HTMLFormElement>('.journey-form');
+
+      if (form?.dataset.participantId) {
+        const journey = getParticipantJourneys(form.dataset.participantId)[activeMode];
+        const stepIndex = changedSelect.name.startsWith('step-')
+          ? Number(changedSelect.name.replace('step-', ''))
+          : null;
+        const previousValue =
+          changedSelect.name === 'endpoint-city'
+            ? journey.endpointCity
+            : stepIndex !== null && Number.isInteger(stepIndex)
+              ? journey.steps[stepIndex] ?? emptyStepValue
+              : emptyStepValue;
+
+        changedSelect.value = previousValue;
+        openCityModal(form.dataset.participantId, changedSelect.name);
+      }
+
+      return;
+    }
+
     const form = (event.target as HTMLElement).closest<HTMLFormElement>(
       '.journey-form',
     );
@@ -1386,6 +1736,25 @@ function bindControls(): void {
     .forEach((item) => {
       item.addEventListener('click', closeMessageDetailModal);
     });
+
+  cityForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    void searchCityFromForm(cityForm);
+  });
+
+  cityResult?.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '[data-city-result]',
+    );
+
+    if (button) {
+      void addCityFromResult(button);
+    }
+  });
+
+  document.querySelectorAll<HTMLElement>('[data-city-close]').forEach((item) => {
+    item.addEventListener('click', closeCityModal);
+  });
 }
 
 function getSavedTheme(): ThemeName {
@@ -1474,6 +1843,7 @@ function bindHelpOptions(): void {
       closeHelpOptionsModal();
       closeMessageModal();
       closeMessageDetailModal();
+      closeCityModal();
     }
   });
 }
@@ -1595,9 +1965,37 @@ function subscribeToRemoteJourneys(): void {
     .subscribe();
 }
 
+function subscribeToCustomCities(): void {
+  if (!isSupabaseConfigured || !supabase) {
+    return;
+  }
+
+  supabase
+    .channel('custom_cities_changes')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'custom_cities',
+      },
+      (payload) => {
+        const city = mapCustomCityRow(payload.new as CustomCityRow);
+        customCities = mergeCustomCities([...customCities, city]);
+        saveLocalCustomCities(customCities);
+
+        if (editingParticipantId) {
+          renderParticipantList(appParticipants);
+        }
+      },
+    )
+    .subscribe();
+}
+
 async function initializeApp(): Promise<void> {
   const accessPassword = await bindAccessGate();
   appParticipants = await loadParticipants(accessPassword);
+  customCities = await loadCustomCities();
   selectedParticipantId = appParticipants[0]?.id ?? '';
   savedJourneys = await loadSavedJourneys();
 
@@ -1609,6 +2007,7 @@ async function initializeApp(): Promise<void> {
   bindControls();
   bindHelpOptions();
   subscribeToRemoteJourneys();
+  subscribeToCustomCities();
 }
 
 void initializeApp();

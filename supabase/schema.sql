@@ -43,3 +43,43 @@ begin
 exception
   when duplicate_object then null;
 end $$;
+
+create table if not exists public.custom_cities (
+  id text primary key,
+  name text not null,
+  postal_code text not null default '',
+  latitude double precision not null,
+  longitude double precision not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.custom_cities enable row level security;
+
+drop policy if exists "Allow public read custom cities" on public.custom_cities;
+create policy "Allow public read custom cities"
+  on public.custom_cities
+  for select
+  to anon
+  using (true);
+
+drop policy if exists "Allow public insert custom cities" on public.custom_cities;
+create policy "Allow public insert custom cities"
+  on public.custom_cities
+  for insert
+  to anon
+  with check (true);
+
+drop policy if exists "Allow public update custom cities" on public.custom_cities;
+create policy "Allow public update custom cities"
+  on public.custom_cities
+  for update
+  to anon
+  using (true)
+  with check (true);
+
+do $$
+begin
+  alter publication supabase_realtime add table public.custom_cities;
+exception
+  when duplicate_object then null;
+end $$;
