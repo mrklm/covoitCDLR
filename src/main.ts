@@ -95,6 +95,7 @@ type PendingCityTarget = {
 const storageKey = 'covoitcdlr-journeys';
 const customCitiesStorageKey = 'covoitcdlr-custom-cities';
 const themeStorageKey = 'covoitcdlr-theme';
+const mapBrightnessStorageKey = 'covoitcdlr-map-brightness';
 const accessStorageKey = 'covoitcdlr-access-granted';
 const accessPasswordHash =
   '06fabe7992014b72287461d5a55221f209d6ac71781bae72cdb601a801b10185';
@@ -104,6 +105,7 @@ const maxStepCount = 8;
 const maxMessageLength = 300;
 const addCityValue = '__add-city__';
 const returnDefaultDate = '2026-07-23';
+const defaultMapBrightness = 100;
 
 const festivalLocation: {
   label: string;
@@ -1788,6 +1790,34 @@ function applyTheme(theme: ThemeName): void {
   localStorage.setItem(themeStorageKey, theme);
 }
 
+function getSavedMapBrightness(): number {
+  const savedBrightness = Number(localStorage.getItem(mapBrightnessStorageKey));
+
+  if (Number.isNaN(savedBrightness)) {
+    return defaultMapBrightness;
+  }
+
+  return Math.min(110, Math.max(45, savedBrightness));
+}
+
+function applyMapBrightness(value: number): void {
+  const brightness = Math.min(110, Math.max(45, value));
+
+  document.documentElement.style.setProperty(
+    '--map-brightness',
+    `${brightness}%`,
+  );
+  localStorage.setItem(mapBrightnessStorageKey, String(brightness));
+}
+
+function updateMapBrightnessLabel(value: number): void {
+  const label = document.querySelector<HTMLElement>('#map-brightness-value');
+
+  if (label) {
+    label.textContent = `${value} %`;
+  }
+}
+
 function setActiveModalTab(tabName: string): void {
   document.querySelectorAll<HTMLButtonElement>('.modal-tab').forEach((tab) => {
     const isActive = tab.dataset.tab === tabName;
@@ -1830,12 +1860,21 @@ function bindHelpOptions(): void {
   const openButton =
     document.querySelector<HTMLButtonElement>('#help-options-button');
   const themeSelect = document.querySelector<HTMLSelectElement>('#theme-select');
+  const mapBrightnessInput =
+    document.querySelector<HTMLInputElement>('#map-brightness');
   const savedTheme = getSavedTheme();
+  const savedMapBrightness = getSavedMapBrightness();
 
   applyTheme(savedTheme);
+  applyMapBrightness(savedMapBrightness);
+  updateMapBrightnessLabel(savedMapBrightness);
 
   if (themeSelect) {
     themeSelect.value = savedTheme;
+  }
+
+  if (mapBrightnessInput) {
+    mapBrightnessInput.value = String(savedMapBrightness);
   }
 
   openButton?.addEventListener('click', openHelpOptionsModal);
@@ -1854,6 +1893,13 @@ function bindHelpOptions(): void {
 
   themeSelect?.addEventListener('change', () => {
     applyTheme(themeSelect.value as ThemeName);
+  });
+
+  mapBrightnessInput?.addEventListener('input', () => {
+    const brightness = Number(mapBrightnessInput.value);
+
+    applyMapBrightness(brightness);
+    updateMapBrightnessLabel(brightness);
   });
 
   window.addEventListener('keydown', (event) => {

@@ -9,6 +9,7 @@
   --border: #d8b892;
   --accent: #d8b892;
   --accent-alt: #8f6b48;
+  --map-brightness: 100%;
   color: var(--text);
   background: var(--page-bg);
   font-family:
@@ -516,6 +517,10 @@ input {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 8px;
+}
+
+#map .leaflet-tile {
+  filter: brightness(var(--map-brightness));
 }
 
 .info-panel {
@@ -1027,6 +1032,23 @@ button:disabled {
   gap: 6px;
   color: var(--muted);
   font-weight: 800;
+}
+
+.range-field {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.range-field input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.range-field span {
+  color: var(--text);
+  font-size: 0.9rem;
 }
 
 .credits {
