@@ -4,6 +4,12 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.4.6] - Juillet 2026
+
+### Ajoute
+
+- Boutons `Fermer` en bas des popups `Aide` et `Options` pour faciliter l'usage mobile.
+
 ## [1.4.5] - Juillet 2026
 
 ### Modifie

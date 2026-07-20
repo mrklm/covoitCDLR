@@ -876,6 +876,13 @@ button:disabled {
   padding: 0 10px;
 }
 
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
 .modal-tabs {
   display: flex;
   gap: 8px;
