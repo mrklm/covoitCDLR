@@ -59,7 +59,7 @@ Les informations sont partagees avec les autres utilisateurs grace a Supabase. A
 - Masquage automatique des trajets et annonces passes.
 - Synchronisation des trajets avec Supabase.
 - Synchronisation des villes ajoutees avec Supabase.
-- Chargement securise des techniciens depuis Supabase via une fonction RPC protegee par mot de passe.
+- Chargement securise des donnees relatives aux technicien-ne-s depuis Supabase via une fonction RPC protegee par mot de passe.
 - Themes visuels configurables depuis la fenetre `Options`.
 - Potentiometre de luminosite de carte pour les themes sombres.
 - Interface responsive ordinateur et telephone.
@@ -134,7 +134,7 @@ covoitCDLR/
 
 ## Donnees privees
 
-Les donnees reelles des techniciens ne doivent pas etre versionnees dans Git.
+Les donnees reelles relatives aux technicien-ne-s ne doivent pas etre versionnees dans Git.
 
 Le dossier `.private/` est ignore par Git et peut contenir des scripts d'import locaux, par exemple :
 
@@ -208,7 +208,7 @@ Ces villes completent la liste integree dans le code et sont partagees entre uti
 `src/main.ts` contient la logique principale :
 
 - initialisation Leaflet ;
-- chargement des techniciens ;
+- chargement des donnees relatives aux technicien-ne-s ;
 - chargement et sauvegarde des trajets ;
 - rendu des marqueurs ;
 - rendu des lignes de trajet ;
@@ -258,7 +258,7 @@ npm run build
 
 covoitCDLR est une application frontend pure : aucune API backend maison n'est deployee. Le navigateur charge l'application statique construite par Vite, puis communique directement avec Supabase.
 
-Au demarrage, l'utilisateur entre le mot de passe d'acces. Ce mot de passe sert a appeler la fonction RPC `public.get_technicians(access_password text)`, qui renvoie les techniciens si le hash correspond. Les tables privees ne sont pas lues directement par le client.
+Au demarrage, l'utilisateur entre le mot de passe d'acces. Ce mot de passe sert a appeler la fonction RPC `public.get_technicians(access_password text)`, qui renvoie les donnees relatives aux technicien-ne-s si le hash correspond. Les tables privees ne sont pas lues directement par le client.
 
 Les trajets sont stockes dans `public.covoit_journeys`, avec une ligne par participant et par sens de trajet :
 
