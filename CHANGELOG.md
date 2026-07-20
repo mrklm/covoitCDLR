@@ -4,6 +4,12 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.4.7] - Juillet 2026
+
+### Ajoute
+
+- Liste deroulante dans la popup d'annonce pour consulter tous les messages actifs.
+
 ## [1.4.6] - Juillet 2026
 
 ### Ajoute

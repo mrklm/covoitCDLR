@@ -1185,6 +1185,10 @@ function getJourneyMessageItems(items: Participant[]): Array<{
   });
 }
 
+function getMessageItemValue(participantId: string, mode: JourneyMode): string {
+  return `${participantId}::${mode}`;
+}
+
 function renderMessageBanner(items: Participant[]): void {
   const banner = document.querySelector<HTMLElement>('#message-banner');
   const track = document.querySelector<HTMLElement>('#message-track');
@@ -1394,13 +1398,14 @@ function closeMessageDetailModal(): void {
   document.body.classList.remove('modal-open');
 }
 
-function openMessageDetailModal(participantId: string, mode: JourneyMode): void {
+function renderMessageDetailContent(
+  participantId: string,
+  mode: JourneyMode,
+): void {
   const participant = getParticipantById(participantId);
-  const modal = document.querySelector<HTMLElement>('#message-detail-modal');
-  const title = document.querySelector<HTMLElement>('#message-detail-title');
   const content = document.querySelector<HTMLElement>('#message-detail-content');
 
-  if (!participant || !modal || !content) {
+  if (!participant || !content) {
     return;
   }
 
@@ -1412,11 +1417,6 @@ function openMessageDetailModal(participantId: string, mode: JourneyMode): void 
         ? 'Cherche un covoit'
         : 'Non renseigné';
 
-  title?.replaceChildren(
-    document.createTextNode(
-      `Message - ${participant.firstName} ${participant.lastName}`,
-    ),
-  );
   content.innerHTML = `
     <p class="message-detail-text">${escapeHtml(journey.message)}</p>
     <dl>
@@ -1442,6 +1442,27 @@ function openMessageDetailModal(participantId: string, mode: JourneyMode): void 
       </div>
     </dl>
   `;
+}
+
+function openMessageDetailModal(participantId: string, mode: JourneyMode): void {
+  const modal = document.querySelector<HTMLElement>('#message-detail-modal');
+  const select = document.querySelector<HTMLSelectElement>('#message-detail-select');
+  const messages = getJourneyMessageItems(appParticipants);
+
+  if (!modal || !select) {
+    return;
+  }
+
+  select.innerHTML = messages
+    .map(({ participant, mode: itemMode }) => {
+      const modeLabel = itemMode === 'outbound' ? 'Aller' : 'Retour';
+      const value = getMessageItemValue(participant.id, itemMode);
+
+      return `<option value="${value}">${escapeHtml(modeLabel)} - ${escapeHtml(participant.firstName)} ${escapeHtml(participant.lastName)}</option>`;
+    })
+    .join('');
+  select.value = getMessageItemValue(participantId, mode);
+  renderMessageDetailContent(participantId, mode);
   modal.hidden = false;
   document.body.classList.add('modal-open');
 }
@@ -1791,6 +1812,18 @@ function bindControls(): void {
     .querySelectorAll<HTMLElement>('[data-message-detail-close]')
     .forEach((item) => {
       item.addEventListener('click', closeMessageDetailModal);
+    });
+
+  document
+    .querySelector<HTMLSelectElement>('#message-detail-select')
+    ?.addEventListener('change', (event) => {
+      const [participantId, mode] = (event.target as HTMLSelectElement).value.split(
+        '::',
+      );
+
+      if (participantId && (mode === 'outbound' || mode === 'return')) {
+        renderMessageDetailContent(participantId, mode);
+      }
     });
 
   cityForm?.addEventListener('submit', (event) => {

@@ -993,6 +993,13 @@ button:disabled {
   gap: 14px;
 }
 
+.message-detail-selector {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .message-detail-text {
   margin: 0;
   padding: 12px;
