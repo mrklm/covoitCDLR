@@ -4,6 +4,12 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.4.4] - Juillet 2026
+
+### Modifie
+
+- Separation de `Aide et options` en deux boutons et deux fenetres distinctes.
+
 ## [1.4.3] - Juillet 2026
 
 ### Ajoute

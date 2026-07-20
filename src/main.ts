@@ -1884,24 +1884,8 @@ function updateMapBrightnessControls(theme: ThemeName): void {
   updateMapBrightnessLabel(brightness);
 }
 
-function setActiveModalTab(tabName: string): void {
-  document.querySelectorAll<HTMLButtonElement>('.modal-tab').forEach((tab) => {
-    const isActive = tab.dataset.tab === tabName;
-    tab.classList.toggle('is-active', isActive);
-    tab.setAttribute('aria-selected', String(isActive));
-  });
-
-  document
-    .querySelectorAll<HTMLElement>('[data-tab-panel]')
-    .forEach((panel) => {
-      const isActive = panel.dataset.tabPanel === tabName;
-      panel.classList.toggle('is-active', isActive);
-      panel.hidden = !isActive;
-    });
-}
-
-function openHelpOptionsModal(): void {
-  const modal = document.querySelector<HTMLElement>('#help-options-modal');
+function openModal(selector: string): void {
+  const modal = document.querySelector<HTMLElement>(selector);
 
   if (!modal) {
     return;
@@ -1911,20 +1895,19 @@ function openHelpOptionsModal(): void {
   document.body.classList.add('modal-open');
 }
 
-function closeHelpOptionsModal(): void {
-  const modal = document.querySelector<HTMLElement>('#help-options-modal');
-
-  if (!modal) {
-    return;
-  }
-
-  modal.hidden = true;
+function closeHelpAndOptionsModals(): void {
+  document
+    .querySelectorAll<HTMLElement>('#help-modal, #options-modal')
+    .forEach((modal) => {
+      modal.hidden = true;
+    });
   document.body.classList.remove('modal-open');
 }
 
 function bindHelpOptions(): void {
-  const openButton =
-    document.querySelector<HTMLButtonElement>('#help-options-button');
+  const helpButton = document.querySelector<HTMLButtonElement>('#help-button');
+  const optionsButton =
+    document.querySelector<HTMLButtonElement>('#options-button');
   const themeSelect = document.querySelector<HTMLSelectElement>('#theme-select');
   const mapBrightnessInput =
     document.querySelector<HTMLInputElement>('#map-brightness');
@@ -1942,19 +1925,14 @@ function bindHelpOptions(): void {
     mapBrightnessInput.value = String(savedMapBrightness);
   }
 
-  openButton?.addEventListener('click', openHelpOptionsModal);
+  helpButton?.addEventListener('click', () => openModal('#help-modal'));
+  optionsButton?.addEventListener('click', () => openModal('#options-modal'));
 
-  document.querySelectorAll<HTMLElement>('[data-modal-close]').forEach((item) => {
-    item.addEventListener('click', closeHelpOptionsModal);
-  });
-
-  document.querySelectorAll<HTMLButtonElement>('.modal-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      if (tab.dataset.tab) {
-        setActiveModalTab(tab.dataset.tab);
-      }
+  document
+    .querySelectorAll<HTMLElement>('[data-help-close], [data-options-close]')
+    .forEach((item) => {
+      item.addEventListener('click', closeHelpAndOptionsModals);
     });
-  });
 
   themeSelect?.addEventListener('change', () => {
     const selectedTheme = themeSelect.value as ThemeName;
@@ -1972,7 +1950,7 @@ function bindHelpOptions(): void {
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
-      closeHelpOptionsModal();
+      closeHelpAndOptionsModals();
       closeMessageModal();
       closeMessageDetailModal();
       closeCityModal();

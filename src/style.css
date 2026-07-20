@@ -383,6 +383,11 @@ h2 {
   gap: 14px;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
 .mobile-view-switcher {
   display: none;
 }
@@ -1231,6 +1236,12 @@ button:disabled {
     align-items: stretch;
     flex-direction: column;
     width: 100%;
+  }
+
+  .header-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
   .help-button {

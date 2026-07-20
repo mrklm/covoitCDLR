@@ -51,7 +51,7 @@
           alt="Logo Chalon dans la rue"
         />
         <div class="header-title">
-          <h1>covoitCDLR <span class="app-version">v1.4.3</span></h1>
+          <h1>covoitCDLR <span class="app-version">v1.4.4</span></h1>
           <p>Festival Chalon dans la rue</p>
         </div>
       </div>
@@ -60,9 +60,14 @@
           Carte interactive afin d'organiser des covoiturages pour l'équipe
           technique du festival Chalon dans la rue
         </p>
-        <button id="help-options-button" class="help-button" type="button">
-          Aide et options
-        </button>
+        <div class="header-buttons">
+          <button id="help-button" class="help-button" type="button">
+            Aide
+          </button>
+          <button id="options-button" class="help-button" type="button">
+            Options
+          </button>
+        </div>
       </div>
     </header>
 
@@ -236,53 +241,25 @@
     </div>
 
     <div
-      id="help-options-modal"
+      id="help-modal"
       class="modal"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="help-options-title"
+      aria-labelledby="help-title"
       hidden
     >
-      <div class="modal-backdrop" data-modal-close></div>
+      <div class="modal-backdrop" data-help-close></div>
       <section class="modal-panel">
         <header class="modal-header">
-          <h2 id="help-options-title">Aide et options</h2>
-          <button class="modal-close-button" type="button" data-modal-close>
+          <h2 id="help-title">Aide</h2>
+          <button class="modal-close-button" type="button" data-help-close>
             Fermer
           </button>
         </header>
 
-        <div class="modal-tabs" role="tablist" aria-label="Aide et options">
-          <button
-            id="help-tab"
-            class="modal-tab is-active"
-            type="button"
-            role="tab"
-            aria-selected="true"
-            aria-controls="help-panel"
-            data-tab="help"
-          >
-            Aide
-          </button>
-          <button
-            id="options-tab"
-            class="modal-tab"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            aria-controls="options-panel"
-            data-tab="options"
-          >
-            Options
-          </button>
-        </div>
-
         <div
           id="help-panel"
-          class="modal-tab-panel is-active"
-          role="tabpanel"
-          aria-labelledby="help-tab"
-          data-tab-panel="help"
+          class="modal-tab-panel"
         >
           <p>
             Cette carte permet à l'équipe technique du festival Chalon dans la
@@ -353,14 +330,28 @@
             </a>
           </section>
         </div>
+      </section>
+    </div>
 
+    <div
+      id="options-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="options-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-options-close></div>
+      <section class="modal-panel">
+        <header class="modal-header">
+          <h2 id="options-title">Options</h2>
+          <button class="modal-close-button" type="button" data-options-close>
+            Fermer
+          </button>
+        </header>
         <div
           id="options-panel"
           class="modal-tab-panel"
-          role="tabpanel"
-          aria-labelledby="options-tab"
-          data-tab-panel="options"
-          hidden
         >
           <label class="theme-field" for="theme-select">
             Thème
@@ -393,7 +384,7 @@
           </p>
 
           <div class="credits">
-            <p>covoitCDLR v1.4.3 - appli TypeScript - Juillet 2026</p>
+            <p>covoitCDLR v1.4.4 - appli TypeScript - Juillet 2026</p>
             <p>Développé par Klm - contact : clementmorel@free.fr</p>
             <p>
               <a href="https://github.com/mrklm/covoitCDLR" target="_blank" rel="noreferrer">

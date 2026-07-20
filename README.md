@@ -60,7 +60,7 @@ Les informations sont partagees avec les autres utilisateurs grace a Supabase. A
 - Synchronisation des trajets avec Supabase.
 - Synchronisation des villes ajoutees avec Supabase.
 - Chargement securise des techniciens depuis Supabase via une fonction RPC protegee par mot de passe.
-- Themes visuels configurables depuis la fenetre `Aide et options`.
+- Themes visuels configurables depuis la fenetre `Options`.
 - Potentiometre de luminosite de carte pour les themes sombres.
 - Interface responsive ordinateur et telephone.
 
