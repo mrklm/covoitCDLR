@@ -165,6 +165,7 @@ La table `public.covoit_journeys` contient les trajets saisis :
 - `date`
 - `endpoint_city`
 - `steps`
+- `message`
 - `updated_at`
 
 La cle primaire est composee de :

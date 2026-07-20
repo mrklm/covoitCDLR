@@ -66,6 +66,15 @@
       </div>
     </header>
 
+    <section
+      id="message-banner"
+      class="message-banner"
+      aria-label="Messages de covoiturage"
+      hidden
+    >
+      <div id="message-track" class="message-track"></div>
+    </section>
+
     <nav class="mobile-view-switcher" aria-label="Affichage mobile">
       <button
         class="mobile-view-button is-active"
@@ -96,7 +105,7 @@
       </section>
 
       <aside class="info-panel" aria-label="Informations participants">
-        <h2 id="participants-title">Participants</h2>
+        <h2 id="participants-title">Participant-e-s</h2>
         <p>
           Cliquez sur votre nom pour renseigner vos dates ainsi que les
           villes-étapes de votre trajet. Les étapes ont pour but de donner une
@@ -106,6 +115,68 @@
         <ul id="participant-list" class="participant-list"></ul>
       </aside>
     </main>
+
+    <div
+      id="message-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="message-modal-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-message-close></div>
+      <section class="modal-panel message-modal-panel">
+        <header class="modal-header">
+          <h2 id="message-modal-title">Message covoit</h2>
+          <button class="modal-close-button" type="button" data-message-close>
+            Fermer
+          </button>
+        </header>
+        <form id="message-form" class="message-form">
+          <p>
+            Rédigez un court message pour préciser une recherche ou une
+            proposition de covoit.
+          </p>
+          <label>
+            Message
+            <textarea
+              id="message-text"
+              name="message"
+              maxlength="300"
+              rows="5"
+            ></textarea>
+          </label>
+          <div class="message-form-footer">
+            <span id="message-counter">0 / 300</span>
+            <button type="submit">Enregistrer</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div
+      id="message-detail-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="message-detail-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-message-detail-close></div>
+      <section class="modal-panel message-modal-panel">
+        <header class="modal-header">
+          <h2 id="message-detail-title">Message covoit</h2>
+          <button
+            class="modal-close-button"
+            type="button"
+            data-message-detail-close
+          >
+            Fermer
+          </button>
+        </header>
+        <div id="message-detail-content" class="message-detail-content"></div>
+      </section>
+    </div>
 
     <div
       id="help-options-modal"
@@ -168,6 +239,10 @@
             Les trajets proposés sont affichés sur la carte avec une ligne
             colorée. Les personnes qui cherchent une place restent visibles dans
             la liste, mais aucun trajet n'est dessiné.
+          </p>
+          <p>
+            Les trajets dont la date est passée ne sont plus affichés sur la
+            carte. Les messages actifs défilent dans le bandeau sous l'en-tête.
           </p>
           <p>
             Le sélecteur au-dessus de la carte permet d'afficher les allers ou

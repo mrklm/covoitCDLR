@@ -38,6 +38,7 @@ type Journey = {
   date: string;
   endpointCity: string;
   steps: string[];
+  message: string;
 };
 
 type ParticipantJourneys = {
@@ -54,6 +55,7 @@ type JourneyRow = {
   date: string | null;
   endpoint_city: string | null;
   steps: unknown;
+  message?: string | null;
 };
 
 type TechnicianRow = {
@@ -75,6 +77,7 @@ const accessPasswordHash =
 const emptyStepValue = '';
 const defaultStepCount = 3;
 const maxStepCount = 8;
+const maxMessageLength = 300;
 
 const festivalLocation: {
   label: string;
@@ -263,6 +266,7 @@ function createEmptyJourney(): Journey {
     date: '',
     endpointCity: '',
     steps: Array(defaultStepCount).fill(emptyStepValue),
+    message: '',
   };
 }
 
@@ -296,15 +300,42 @@ async function loadSavedJourneys(): Promise<SavedJourneys> {
 
   const { data, error } = await supabase
     .from('covoit_journeys')
-    .select('participant_id, journey_mode, status, date, endpoint_city, steps');
+    .select('participant_id, journey_mode, status, date, endpoint_city, steps, message');
 
-  if (error) {
-    console.warn('Chargement Supabase impossible, données locales utilisées.', error);
+  const resultData = data;
+  let resultError = error;
+
+  if (resultError) {
+    const fallbackResult = await supabase
+      .from('covoit_journeys')
+      .select('participant_id, journey_mode, status, date, endpoint_city, steps');
+
+    resultError = fallbackResult.error;
+
+    if (!resultError) {
+      console.warn(
+        'La colonne message est absente de Supabase. Les messages resteront locaux jusqu’à la mise à jour du schéma.',
+      );
+      return reduceJourneyRows(fallbackResult.data as JourneyRow[], localJourneys);
+    }
+  }
+
+  if (resultError) {
+    console.warn('Chargement Supabase impossible, données locales utilisées.', resultError);
     return localJourneys;
   }
 
-  const remoteJourneys = (data as JourneyRow[]).reduce<SavedJourneys>(
+  return reduceJourneyRows(resultData as JourneyRow[], localJourneys);
+}
+
+function reduceJourneyRows(
+  rows: JourneyRow[],
+  baseJourneys: SavedJourneys = {},
+): SavedJourneys {
+  const remoteJourneys = rows.reduce<SavedJourneys>(
     (journeys, row) => {
+      const existingJourney = journeys[row.participant_id]?.[row.journey_mode];
+
       journeys[row.participant_id] = {
         ...createEmptyParticipantJourneys(),
         ...journeys[row.participant_id],
@@ -315,12 +346,13 @@ async function loadSavedJourneys(): Promise<SavedJourneys> {
           steps: Array.isArray(row.steps)
             ? row.steps.map(String)
             : Array(defaultStepCount).fill(emptyStepValue),
+          message: row.message ?? existingJourney?.message ?? '',
         }),
       };
 
       return journeys;
     },
-    {},
+    { ...baseJourneys },
   );
 
   localStorage.setItem(storageKey, JSON.stringify(remoteJourneys));
@@ -339,6 +371,7 @@ function normalizeJourney(journey?: Partial<Journey>): Journey {
     status: journey?.status ?? 'unset',
     endpointCity: journey?.endpointCity ?? '',
     steps: savedSteps.map((step) => step ?? emptyStepValue),
+    message: String(journey?.message ?? '').slice(0, maxMessageLength),
   };
 }
 
@@ -355,20 +388,35 @@ async function saveJourneyToSupabase(
     return;
   }
 
-  const { error } = await supabase.from('covoit_journeys').upsert(
-    {
-      participant_id: participantId,
-      journey_mode: mode,
-      status: journey.status,
-      date: journey.date,
-      endpoint_city: journey.endpointCity,
-      steps: journey.steps,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: 'participant_id,journey_mode',
-    },
-  );
+  const payload = {
+    participant_id: participantId,
+    journey_mode: mode,
+    status: journey.status,
+    date: journey.date,
+    endpoint_city: journey.endpointCity,
+    steps: journey.steps,
+    message: journey.message,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await supabase.from('covoit_journeys').upsert(payload, {
+    onConflict: 'participant_id,journey_mode',
+  });
+
+  if (error && 'message' in payload) {
+    const { message: _message, ...payloadWithoutMessage } = payload;
+    const fallbackResult = await supabase
+      .from('covoit_journeys')
+      .upsert(payloadWithoutMessage, {
+        onConflict: 'participant_id,journey_mode',
+      });
+
+    if (!fallbackResult.error) {
+      console.warn(
+        'Message non sauvegardé dans Supabase : exécuter le schéma SQL pour ajouter la colonne message.',
+      );
+      return;
+    }
+  }
 
   if (error) {
     console.warn('Sauvegarde Supabase impossible.', error);
@@ -468,6 +516,27 @@ function escapeHtml(value: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function getTodayValue(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function isJourneyExpired(journey: Journey): boolean {
+  return Boolean(journey.date) && journey.date < getTodayValue();
+}
+
+function isJourneyVisible(journey: Journey): boolean {
+  return !isJourneyExpired(journey);
+}
+
+function getParticipantById(participantId: string): Participant | undefined {
+  return appParticipants.find((participant) => participant.id === participantId);
 }
 
 function buildMissingCityOption(selectedValue: string): string {
@@ -813,7 +882,7 @@ function renderParticipantList(items: Participant[]): void {
   }
 
   if (title) {
-    title.textContent = `Participants (${items.length})`;
+    title.textContent = `Participant-e-s (${items.length})`;
   }
 
   if (notice) {
@@ -837,7 +906,9 @@ function renderParticipantList(items: Participant[]): void {
         journey.status !== 'unset' ||
         journey.date ||
         Boolean(journey.endpointCity) ||
-        journey.steps.some(Boolean);
+        journey.steps.some(Boolean) ||
+        Boolean(journey.message);
+      const expiredLabel = isJourneyExpired(journey) ? ' - trajet passé' : '';
 
       return `
         <li class="${isSelected ? 'is-selected' : ''}">
@@ -849,13 +920,18 @@ function renderParticipantList(items: Participant[]): void {
                 ${getStatusIcon(journey.status)}
               </span>
               <span>
-                ${participant.city}${hasJourney ? ' - renseignements saisis' : ''}
+                ${participant.city}${hasJourney ? ' - renseignements saisis' : ''}${expiredLabel}
                 ${hasMapPoint ? '' : ' - trajet à renseigner'}
               </span>
             </button>
-            <button class="edit-journey-button" type="button" data-participant-id="${participant.id}">
-              ${isEditing ? 'Fermer' : 'Renseigner'}
-            </button>
+            <div class="participant-actions">
+              <button class="edit-journey-button" type="button" data-participant-id="${participant.id}">
+                ${isEditing ? 'Fermer' : 'Renseigner'}
+              </button>
+              <button class="message-button" type="button" data-participant-id="${participant.id}">
+                Message
+              </button>
+            </div>
           </div>
           ${isEditing ? renderJourneyForm(participant) : ''}
         </li>
@@ -901,7 +977,7 @@ function drawRoutes(items: Participant[]): void {
 
   items.forEach((participant) => {
     const journey = getParticipantJourneys(participant.id)[activeMode];
-    const hasRoute = journey.status === 'offer';
+    const hasRoute = journey.status === 'offer' && isJourneyVisible(journey);
 
     if (!hasRoute) {
       return;
@@ -929,6 +1005,54 @@ function drawRoutes(items: Participant[]): void {
   });
 }
 
+function getJourneyMessageItems(items: Participant[]): Array<{
+  participant: Participant;
+  journey: Journey;
+}> {
+  return items
+    .map((participant) => ({
+      participant,
+      journey: getParticipantJourneys(participant.id)[activeMode],
+    }))
+    .filter(
+      ({ journey }) =>
+        isJourneyVisible(journey) &&
+        journey.status !== 'unset' &&
+        Boolean(journey.message.trim()),
+    );
+}
+
+function renderMessageBanner(items: Participant[]): void {
+  const banner = document.querySelector<HTMLElement>('#message-banner');
+  const track = document.querySelector<HTMLElement>('#message-track');
+
+  if (!banner || !track) {
+    return;
+  }
+
+  const messages = getJourneyMessageItems(items);
+
+  banner.hidden = messages.length === 0;
+  track.innerHTML = messages
+    .map(({ participant, journey }) => {
+      const modeLabel = activeMode === 'outbound' ? 'Aller' : 'Retour';
+      const statusLabel =
+        journey.status === 'offer' ? 'propose un covoit' : 'cherche un covoit';
+
+      return `
+        <button
+          class="message-ticker-item"
+          type="button"
+          data-message-participant-id="${participant.id}"
+        >
+          <strong>${escapeHtml(participant.firstName)} ${escapeHtml(participant.lastName)}</strong>
+          <span>${modeLabel} - ${statusLabel} : ${escapeHtml(journey.message)}</span>
+        </button>
+      `;
+    })
+    .join('');
+}
+
 function readJourneyFromForm(form: HTMLFormElement): Journey {
   const participantId = form.dataset.participantId;
   const existingJourney = participantId
@@ -942,6 +1066,7 @@ function readJourneyFromForm(form: HTMLFormElement): Journey {
     status,
     date: String(formData.get('date') ?? ''),
     endpointCity: String(formData.get('endpoint-city') ?? ''),
+    message: existingJourney.message,
     steps:
       status === 'offer'
         ? Array.from(
@@ -962,6 +1087,7 @@ function updateParticipantJourneyFromForm(form: HTMLFormElement): void {
   addParticipantMarkers(appParticipants);
   renderParticipantList(appParticipants);
   drawRoutes(appParticipants);
+  renderMessageBanner(appParticipants);
 }
 
 function updateStepCountFromButton(button: HTMLButtonElement): void {
@@ -987,6 +1113,7 @@ function updateStepCountFromButton(button: HTMLButtonElement): void {
   addParticipantMarkers(appParticipants);
   renderParticipantList(appParticipants);
   drawRoutes(appParticipants);
+  renderMessageBanner(appParticipants);
 }
 
 function setMobileView(view: 'map' | 'participants'): void {
@@ -1010,9 +1137,136 @@ function setMobileView(view: 'map' | 'participants'): void {
   }
 }
 
+function closeMessageModal(): void {
+  const modal = document.querySelector<HTMLElement>('#message-modal');
+
+  if (!modal) {
+    return;
+  }
+
+  modal.hidden = true;
+  document.body.classList.remove('modal-open');
+}
+
+function updateMessageCounter(textarea: HTMLTextAreaElement): void {
+  const counter = document.querySelector<HTMLElement>('#message-counter');
+
+  if (counter) {
+    counter.textContent = `${textarea.value.length} / ${maxMessageLength}`;
+  }
+}
+
+function openMessageModal(participantId: string): void {
+  const participant = getParticipantById(participantId);
+  const modal = document.querySelector<HTMLElement>('#message-modal');
+  const title = document.querySelector<HTMLElement>('#message-modal-title');
+  const form = document.querySelector<HTMLFormElement>('#message-form');
+  const textarea = document.querySelector<HTMLTextAreaElement>('#message-text');
+
+  if (!participant || !modal || !form || !textarea) {
+    return;
+  }
+
+  const journey = getParticipantJourneys(participant.id)[activeMode];
+  form.dataset.participantId = participant.id;
+  title?.replaceChildren(
+    document.createTextNode(
+      `Message - ${participant.firstName} ${participant.lastName}`,
+    ),
+  );
+  textarea.value = journey.message;
+  updateMessageCounter(textarea);
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+  textarea.focus();
+}
+
+function saveMessageFromModal(form: HTMLFormElement): void {
+  const participantId = form.dataset.participantId;
+  const textarea = document.querySelector<HTMLTextAreaElement>('#message-text');
+
+  if (!participantId || !textarea) {
+    return;
+  }
+
+  const journey = getParticipantJourneys(participantId)[activeMode];
+  setParticipantJourney(participantId, activeMode, {
+    ...journey,
+    message: textarea.value.trim().slice(0, maxMessageLength),
+  });
+
+  renderParticipantList(appParticipants);
+  drawRoutes(appParticipants);
+  renderMessageBanner(appParticipants);
+  closeMessageModal();
+}
+
+function closeMessageDetailModal(): void {
+  const modal = document.querySelector<HTMLElement>('#message-detail-modal');
+
+  if (!modal) {
+    return;
+  }
+
+  modal.hidden = true;
+  document.body.classList.remove('modal-open');
+}
+
+function openMessageDetailModal(participantId: string): void {
+  const participant = getParticipantById(participantId);
+  const modal = document.querySelector<HTMLElement>('#message-detail-modal');
+  const title = document.querySelector<HTMLElement>('#message-detail-title');
+  const content = document.querySelector<HTMLElement>('#message-detail-content');
+
+  if (!participant || !modal || !content) {
+    return;
+  }
+
+  const journey = getParticipantJourneys(participant.id)[activeMode];
+  const statusLabel =
+    journey.status === 'offer' ? 'Propose un covoit' : 'Cherche un covoit';
+
+  title?.replaceChildren(
+    document.createTextNode(
+      `Message - ${participant.firstName} ${participant.lastName}`,
+    ),
+  );
+  content.innerHTML = `
+    <p class="message-detail-text">${escapeHtml(journey.message)}</p>
+    <dl>
+      <div>
+        <dt>Statut</dt>
+        <dd>${statusLabel}</dd>
+      </div>
+      <div>
+        <dt>Trajet</dt>
+        <dd>${activeMode === 'outbound' ? 'Aller' : 'Retour'}</dd>
+      </div>
+      <div>
+        <dt>Date</dt>
+        <dd>${journey.date ? escapeHtml(journey.date) : 'Non renseignée'}</dd>
+      </div>
+      <div>
+        <dt>Ville</dt>
+        <dd>${escapeHtml(participant.city)}</dd>
+      </div>
+      <div>
+        <dt>Téléphone</dt>
+        <dd>${escapeHtml(participant.phone)}</dd>
+      </div>
+    </dl>
+  `;
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+}
+
 function bindControls(): void {
   const modeSelect = document.querySelector<HTMLSelectElement>('#journey-mode');
   const list = document.querySelector<HTMLUListElement>('#participant-list');
+  const banner = document.querySelector<HTMLElement>('#message-banner');
+  const messageForm = document.querySelector<HTMLFormElement>('#message-form');
+  const messageTextarea =
+    document.querySelector<HTMLTextAreaElement>('#message-text');
 
   setMobileView(activeMobileView);
 
@@ -1034,6 +1288,7 @@ function bindControls(): void {
     addParticipantMarkers(appParticipants);
     renderParticipantList(appParticipants);
     drawRoutes(appParticipants);
+    renderMessageBanner(appParticipants);
 
     if (activeMobileView === 'map') {
       map.invalidateSize();
@@ -1050,6 +1305,16 @@ function bindControls(): void {
       return;
     }
 
+    const messageButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '.message-button',
+    );
+
+    if (messageButton?.dataset.participantId) {
+      selectedParticipantId = messageButton.dataset.participantId;
+      openMessageModal(messageButton.dataset.participantId);
+      return;
+    }
+
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
       '.participant-button',
     );
@@ -1061,6 +1326,7 @@ function bindControls(): void {
     selectedParticipantId = button.dataset.participantId;
     renderParticipantList(appParticipants);
     drawRoutes(appParticipants);
+    renderMessageBanner(appParticipants);
   });
 
   list?.addEventListener('click', (event) => {
@@ -1079,6 +1345,7 @@ function bindControls(): void {
         : button.dataset.participantId;
     renderParticipantList(appParticipants);
     drawRoutes(appParticipants);
+    renderMessageBanner(appParticipants);
   });
 
   list?.addEventListener('change', (event) => {
@@ -1090,6 +1357,35 @@ function bindControls(): void {
       updateParticipantJourneyFromForm(form);
     }
   });
+
+  banner?.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '[data-message-participant-id]',
+    );
+
+    if (button?.dataset.messageParticipantId) {
+      openMessageDetailModal(button.dataset.messageParticipantId);
+    }
+  });
+
+  messageTextarea?.addEventListener('input', () => {
+    updateMessageCounter(messageTextarea);
+  });
+
+  messageForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveMessageFromModal(messageForm);
+  });
+
+  document.querySelectorAll<HTMLElement>('[data-message-close]').forEach((item) => {
+    item.addEventListener('click', closeMessageModal);
+  });
+
+  document
+    .querySelectorAll<HTMLElement>('[data-message-detail-close]')
+    .forEach((item) => {
+      item.addEventListener('click', closeMessageDetailModal);
+    });
 }
 
 function getSavedTheme(): ThemeName {
@@ -1176,6 +1472,8 @@ function bindHelpOptions(): void {
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       closeHelpOptionsModal();
+      closeMessageModal();
+      closeMessageDetailModal();
     }
   });
 }
@@ -1260,6 +1558,7 @@ function applyRemoteJourneyRow(row: JourneyRow): void {
         steps: Array.isArray(row.steps)
           ? row.steps.map(String)
           : Array(defaultStepCount).fill(emptyStepValue),
+        message: row.message ?? '',
       }),
     },
   };
@@ -1268,6 +1567,7 @@ function applyRemoteJourneyRow(row: JourneyRow): void {
   addParticipantMarkers(appParticipants);
   renderParticipantList(appParticipants);
   drawRoutes(appParticipants);
+  renderMessageBanner(appParticipants);
 }
 
 function subscribeToRemoteJourneys(): void {
@@ -1305,6 +1605,7 @@ async function initializeApp(): Promise<void> {
   addParticipantMarkers(appParticipants);
   renderParticipantList(appParticipants);
   drawRoutes(appParticipants);
+  renderMessageBanner(appParticipants);
   bindControls();
   bindHelpOptions();
   subscribeToRemoteJourneys();

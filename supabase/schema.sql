@@ -5,9 +5,13 @@ create table if not exists public.covoit_journeys (
   date text not null default '',
   endpoint_city text not null default '',
   steps jsonb not null default '[]'::jsonb,
+  message text not null default '',
   updated_at timestamptz not null default now(),
   primary key (participant_id, journey_mode)
 );
+
+alter table public.covoit_journeys
+  add column if not exists message text not null default '';
 
 alter table public.covoit_journeys enable row level security;
 
