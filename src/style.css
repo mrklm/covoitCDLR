@@ -1041,6 +1041,19 @@ button:disabled {
   font-weight: 800;
 }
 
+.map-brightness-controls {
+  display: grid;
+  gap: 8px;
+}
+
+.map-brightness-controls[hidden] {
+  display: none;
+}
+
+.map-brightness-controls p {
+  margin: 0;
+}
+
 .range-field input {
   width: 100%;
   accent-color: var(--accent);

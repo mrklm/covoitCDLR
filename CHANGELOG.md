@@ -11,7 +11,7 @@ Le format suit l'esprit de Keep a Changelog, avec des sections simples en franca
 - Bandeau de messages de covoiturage avec popup de consultation et coordonnees du participant.
 - Bouton `Message` pour saisir une recherche ou une proposition en 300 caracteres maximum.
 - Ajout de villes personnalisees depuis l'interface avec recherche GPS via `geo.api.gouv.fr`.
-- Curseur de luminosite de la carte, persistant dans le navigateur.
+- Curseur de luminosite de la carte pour les themes sombres, persistant dans le navigateur.
 - Affichage discret du numero de version dans l'en-tete de l'application.
 
 ### Modifie

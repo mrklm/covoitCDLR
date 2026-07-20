@@ -105,7 +105,7 @@ const maxStepCount = 8;
 const maxMessageLength = 300;
 const addCityValue = '__add-city__';
 const returnDefaultDate = '2026-07-23';
-const defaultMapBrightness = 100;
+const defaultDarkMapBrightness = 70;
 
 const festivalLocation: {
   label: string;
@@ -1790,23 +1790,33 @@ function applyTheme(theme: ThemeName): void {
   localStorage.setItem(themeStorageKey, theme);
 }
 
+function isDarkTheme(theme: ThemeName): boolean {
+  return theme.startsWith('sombre-');
+}
+
 function getSavedMapBrightness(): number {
   const savedBrightness = Number(localStorage.getItem(mapBrightnessStorageKey));
 
   if (Number.isNaN(savedBrightness)) {
-    return defaultMapBrightness;
+    return defaultDarkMapBrightness;
   }
 
   return Math.min(110, Math.max(45, savedBrightness));
 }
 
-function applyMapBrightness(value: number): void {
+function setMapBrightnessCss(value: number): void {
   const brightness = Math.min(110, Math.max(45, value));
 
   document.documentElement.style.setProperty(
     '--map-brightness',
     `${brightness}%`,
   );
+}
+
+function applyMapBrightness(value: number): void {
+  const brightness = Math.min(110, Math.max(45, value));
+
+  setMapBrightnessCss(brightness);
   localStorage.setItem(mapBrightnessStorageKey, String(brightness));
 }
 
@@ -1816,6 +1826,20 @@ function updateMapBrightnessLabel(value: number): void {
   if (label) {
     label.textContent = `${value} %`;
   }
+}
+
+function updateMapBrightnessControls(theme: ThemeName): void {
+  const controls = document.querySelector<HTMLElement>(
+    '#map-brightness-controls',
+  );
+  const brightness = getSavedMapBrightness();
+
+  if (controls) {
+    controls.hidden = !isDarkTheme(theme);
+  }
+
+  setMapBrightnessCss(isDarkTheme(theme) ? brightness : 100);
+  updateMapBrightnessLabel(brightness);
 }
 
 function setActiveModalTab(tabName: string): void {
@@ -1866,8 +1890,7 @@ function bindHelpOptions(): void {
   const savedMapBrightness = getSavedMapBrightness();
 
   applyTheme(savedTheme);
-  applyMapBrightness(savedMapBrightness);
-  updateMapBrightnessLabel(savedMapBrightness);
+  updateMapBrightnessControls(savedTheme);
 
   if (themeSelect) {
     themeSelect.value = savedTheme;
@@ -1892,7 +1915,10 @@ function bindHelpOptions(): void {
   });
 
   themeSelect?.addEventListener('change', () => {
-    applyTheme(themeSelect.value as ThemeName);
+    const selectedTheme = themeSelect.value as ThemeName;
+
+    applyTheme(selectedTheme);
+    updateMapBrightnessControls(selectedTheme);
   });
 
   mapBrightnessInput?.addEventListener('input', () => {
