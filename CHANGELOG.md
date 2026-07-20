@@ -4,7 +4,7 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
-## [1.1.0] - Juillet 2026
+## [1.2.0] - Juillet 2026
 
 ### Ajoute
 
@@ -16,6 +16,8 @@ Le format suit l'esprit de Keep a Changelog, avec des sections simples en franca
 ### Modifie
 
 - Les trajets dont la date est passee ne sont plus affiches sur la carte.
+- La carte s'ouvrira par defaut sur les retours a partir du 23 juillet 2026.
+- Le bandeau de messages affiche les messages actifs des allers et des retours, quel que soit le mode de carte selectionne.
 - Le titre de la liste devient `Participant-e-s`.
 
 ## [1.0.0] - Juillet 2026

@@ -103,6 +103,7 @@ const defaultStepCount = 3;
 const maxStepCount = 8;
 const maxMessageLength = 300;
 const addCityValue = '__add-city__';
+const returnDefaultDate = '2026-07-23';
 
 const festivalLocation: {
   label: string;
@@ -221,7 +222,8 @@ const cityOptions: CityOption[] = [
 ];
 
 const franceCenter: L.LatLngExpression = [46.8, 2.4];
-let activeMode: JourneyMode = 'outbound';
+let activeMode: JourneyMode =
+  getTodayValue() >= returnDefaultDate ? 'return' : 'outbound';
 let appParticipants: Participant[] = demoParticipants;
 let selectedParticipantId = appParticipants[0]?.id ?? '';
 let editingParticipantId: string | null = null;
@@ -1147,18 +1149,24 @@ function drawRoutes(items: Participant[]): void {
 function getJourneyMessageItems(items: Participant[]): Array<{
   participant: Participant;
   journey: Journey;
+  mode: JourneyMode;
 }> {
-  return items
-    .map((participant) => ({
-      participant,
-      journey: getParticipantJourneys(participant.id)[activeMode],
-    }))
-    .filter(
-      ({ journey }) =>
-        isJourneyVisible(journey) &&
-        journey.status !== 'unset' &&
-        Boolean(journey.message.trim()),
-    );
+  return items.flatMap((participant) => {
+    const journeys = getParticipantJourneys(participant.id);
+
+    return (['outbound', 'return'] as JourneyMode[])
+      .map((mode) => ({
+        participant,
+        journey: journeys[mode],
+        mode,
+      }))
+      .filter(
+        ({ journey }) =>
+          isJourneyVisible(journey) &&
+          journey.status !== 'unset' &&
+          Boolean(journey.message.trim()),
+      );
+  });
 }
 
 function renderMessageBanner(items: Participant[]): void {
@@ -1173,8 +1181,8 @@ function renderMessageBanner(items: Participant[]): void {
 
   banner.hidden = messages.length === 0;
   track.innerHTML = messages
-    .map(({ participant, journey }) => {
-      const modeLabel = activeMode === 'outbound' ? 'Aller' : 'Retour';
+    .map(({ participant, journey, mode }) => {
+      const modeLabel = mode === 'outbound' ? 'Aller' : 'Retour';
       const statusLabel =
         journey.status === 'offer' ? 'propose un covoit' : 'cherche un covoit';
 
@@ -1183,6 +1191,7 @@ function renderMessageBanner(items: Participant[]): void {
           class="message-ticker-item"
           type="button"
           data-message-participant-id="${participant.id}"
+          data-message-mode="${mode}"
         >
           <strong>${escapeHtml(participant.firstName)} ${escapeHtml(participant.lastName)}</strong>
           <span>${modeLabel} - ${statusLabel} : ${escapeHtml(journey.message)}</span>
@@ -1351,7 +1360,7 @@ function closeMessageDetailModal(): void {
   document.body.classList.remove('modal-open');
 }
 
-function openMessageDetailModal(participantId: string): void {
+function openMessageDetailModal(participantId: string, mode: JourneyMode): void {
   const participant = getParticipantById(participantId);
   const modal = document.querySelector<HTMLElement>('#message-detail-modal');
   const title = document.querySelector<HTMLElement>('#message-detail-title');
@@ -1361,7 +1370,7 @@ function openMessageDetailModal(participantId: string): void {
     return;
   }
 
-  const journey = getParticipantJourneys(participant.id)[activeMode];
+  const journey = getParticipantJourneys(participant.id)[mode];
   const statusLabel =
     journey.status === 'offer' ? 'Propose un covoit' : 'Cherche un covoit';
 
@@ -1379,7 +1388,7 @@ function openMessageDetailModal(participantId: string): void {
       </div>
       <div>
         <dt>Trajet</dt>
-        <dd>${activeMode === 'outbound' ? 'Aller' : 'Retour'}</dd>
+        <dd>${mode === 'outbound' ? 'Aller' : 'Retour'}</dd>
       </div>
       <div>
         <dt>Date</dt>
@@ -1594,6 +1603,10 @@ function bindControls(): void {
 
   setMobileView(activeMobileView);
 
+  if (modeSelect) {
+    modeSelect.value = activeMode;
+  }
+
   document
     .querySelectorAll<HTMLButtonElement>('.mobile-view-button')
     .forEach((button) => {
@@ -1713,8 +1726,13 @@ function bindControls(): void {
       '[data-message-participant-id]',
     );
 
-    if (button?.dataset.messageParticipantId) {
-      openMessageDetailModal(button.dataset.messageParticipantId);
+    const mode = button?.dataset.messageMode;
+
+    if (
+      button?.dataset.messageParticipantId &&
+      (mode === 'outbound' || mode === 'return')
+    ) {
+      openMessageDetailModal(button.dataset.messageParticipantId, mode);
     }
   });
 
