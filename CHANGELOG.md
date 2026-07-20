@@ -4,6 +4,19 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.1.0] - Juillet 2026
+
+### Ajoute
+
+- Bandeau de messages de covoiturage avec popup de consultation et coordonnees du participant.
+- Bouton `Message` pour saisir une recherche ou une proposition en 300 caracteres maximum.
+- Affichage discret du numero de version dans l'en-tete de l'application.
+
+### Modifie
+
+- Les trajets dont la date est passee ne sont plus affiches sur la carte.
+- Le titre de la liste devient `Participant-e-s`.
+
 ## [1.0.0] - Juillet 2026
 
 ### Ajoute
