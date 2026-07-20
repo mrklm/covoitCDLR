@@ -1832,13 +1832,19 @@ function updateMapBrightnessControls(theme: ThemeName): void {
   const controls = document.querySelector<HTMLElement>(
     '#map-brightness-controls',
   );
+  const hint = document.querySelector<HTMLElement>('#map-brightness-hint');
   const brightness = getSavedMapBrightness();
+  const isDark = isDarkTheme(theme);
 
   if (controls) {
-    controls.hidden = !isDarkTheme(theme);
+    controls.hidden = !isDark;
   }
 
-  setMapBrightnessCss(isDarkTheme(theme) ? brightness : 100);
+  if (hint) {
+    hint.hidden = isDark;
+  }
+
+  setMapBrightnessCss(isDark ? brightness : 100);
   updateMapBrightnessLabel(brightness);
 }
 

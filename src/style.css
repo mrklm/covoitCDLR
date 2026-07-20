@@ -1054,6 +1054,19 @@ button:disabled {
   margin: 0;
 }
 
+.option-hint {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.option-hint[hidden] {
+  display: none;
+}
+
 .range-field input {
   width: 100%;
   accent-color: var(--accent);
