@@ -1100,7 +1100,11 @@ function renderParticipantList(items: Participant[]): void {
 
 function getRoutePoints(participant: Participant, mode: JourneyMode): L.LatLngExpression[] {
   const journey = getParticipantJourneys(participant.id)[mode];
-  const endpointCity = findCityByName(journey.endpointCity || participant.city);
+  const endpointCityName = journey.endpointCity || participant.city;
+  const endpointCity = findCityByName(endpointCityName);
+  const canUseParticipantFallback =
+    !journey.endpointCity ||
+    getCityKey(endpointCityName) === getCityKey(participant.city);
   const selectedSteps = journey.steps
     .map(findCityByName)
     .filter((city): city is CityOption => Boolean(city) && hasCityCoordinates(city));
@@ -1109,7 +1113,9 @@ function getRoutePoints(participant: Participant, mode: JourneyMode): L.LatLngEx
     ? hasCityCoordinates(endpointCity)
       ? [endpointCity.latitude as number, endpointCity.longitude as number]
       : null
-    : participant.latitude !== null && participant.longitude !== null
+    : canUseParticipantFallback &&
+        participant.latitude !== null &&
+        participant.longitude !== null
       ? [participant.latitude, participant.longitude]
       : null;
   const festivalPoint: L.LatLngExpression = [
@@ -2126,10 +2132,11 @@ function subscribeToCustomCities(): void {
         const city = mapCustomCityRow(payload.new as CustomCityRow);
         customCities = mergeCustomCities([...customCities, city]);
         saveLocalCustomCities(customCities);
-
-        if (editingParticipantId) {
-          renderParticipantList(appParticipants);
-        }
+        addParticipantMarkers(appParticipants);
+        renderParticipantList(appParticipants);
+        drawRoutes(appParticipants);
+        renderMessageBanner(appParticipants);
+        map.invalidateSize();
       },
     )
     .subscribe();

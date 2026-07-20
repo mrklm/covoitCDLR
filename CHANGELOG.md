@@ -4,6 +4,13 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.4.8] - Juillet 2026
+
+### Corrige
+
+- Redessin de la carte quand une ville personnalisee arrive en temps reel sur mobile.
+- Le trace ne retombe plus sur la ville par defaut si une destination modifiee n'a pas encore ses coordonnees.
+
 ## [1.4.7] - Juillet 2026
 
 ### Ajoute
