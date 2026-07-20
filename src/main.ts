@@ -418,9 +418,9 @@ async function saveJourneyToSupabase(
   participantId: string,
   mode: JourneyMode,
   journey: Journey,
-): Promise<void> {
+): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) {
-    return;
+    return false;
   }
 
   const payload = {
@@ -438,6 +438,14 @@ async function saveJourneyToSupabase(
   });
 
   if (error && 'message' in payload) {
+    if (journey.message.trim()) {
+      console.warn(
+        'Message non sauvegardé dans Supabase : exécuter le schéma SQL pour ajouter la colonne message.',
+        error,
+      );
+      return false;
+    }
+
     const { message: _message, ...payloadWithoutMessage } = payload;
     const fallbackResult = await supabase
       .from('covoit_journeys')
@@ -449,13 +457,16 @@ async function saveJourneyToSupabase(
       console.warn(
         'Message non sauvegardé dans Supabase : exécuter le schéma SQL pour ajouter la colonne message.',
       );
-      return;
+      return true;
     }
   }
 
   if (error) {
     console.warn('Sauvegarde Supabase impossible.', error);
+    return false;
   }
+
+  return true;
 }
 
 function getParticipantJourneys(participantId: string): ParticipantJourneys {
@@ -471,7 +482,7 @@ function setParticipantJourney(
   participantId: string,
   mode: JourneyMode,
   journey: Journey,
-): void {
+): Promise<boolean> {
   savedJourneys = {
     ...savedJourneys,
     [participantId]: {
@@ -481,7 +492,7 @@ function setParticipantJourney(
   };
 
   saveJourneys();
-  void saveJourneyToSupabase(participantId, mode, journey);
+  return saveJourneyToSupabase(participantId, mode, journey);
 }
 
 function normalizeCustomCity(city: CityOption): CityOption {
@@ -1346,7 +1357,7 @@ function openMessageModal(participantId: string): void {
   textarea.focus();
 }
 
-function saveMessageFromModal(form: HTMLFormElement): void {
+async function saveMessageFromModal(form: HTMLFormElement): Promise<void> {
   const participantId = form.dataset.participantId;
   const textarea = document.querySelector<HTMLTextAreaElement>('#message-text');
 
@@ -1355,7 +1366,7 @@ function saveMessageFromModal(form: HTMLFormElement): void {
   }
 
   const journey = getParticipantJourneys(participantId)[activeMode];
-  setParticipantJourney(participantId, activeMode, {
+  const isShared = await setParticipantJourney(participantId, activeMode, {
     ...journey,
     message: textarea.value.trim().slice(0, maxMessageLength),
   });
@@ -1364,6 +1375,12 @@ function saveMessageFromModal(form: HTMLFormElement): void {
   drawRoutes(appParticipants);
   renderMessageBanner(appParticipants);
   closeMessageModal();
+
+  if (!isShared && textarea.value.trim()) {
+    window.alert(
+      "Le message est visible sur cet appareil, mais il n'a pas été partagé avec les autres utilisateurs. Réexécute le fichier supabase/schema.sql dans Supabase pour vérifier la colonne message.",
+    );
+  }
 }
 
 function closeMessageDetailModal(): void {

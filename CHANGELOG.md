@@ -4,6 +4,19 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.4.1] - Juillet 2026
+
+### Corrige
+
+- Les messages sans statut de trajet sont affiches dans le bandeau d'annonces.
+- Le bandeau d'annonces reste visible sur mobile avec un message d'attente si aucune annonce active n'est disponible.
+- L'enregistrement d'une annonce signale maintenant clairement si le message reste local au lieu d'etre partage via Supabase.
+
+### Modifie
+
+- Le reglage de luminosite de carte est deplace au-dessus de la carte et reste limite aux themes sombres.
+- Le bouton mobile de liste affiche `Participant-e-s`.
+
 ## [1.4.0] - Juillet 2026
 
 ### Ajoute
