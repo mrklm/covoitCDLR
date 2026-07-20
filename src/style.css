@@ -1265,23 +1265,23 @@ button:disabled {
   }
 
   .message-track {
-    display: flex;
-    width: 100%;
-    min-width: 0;
-    padding: 8px 14px;
-    overflow-x: auto;
-    animation: none;
+    display: inline-flex;
+    width: auto;
+    min-width: max-content;
+    padding: 8px 0;
+    overflow: visible;
+    animation: message-scroll 26s linear infinite;
   }
 
   .message-ticker-item,
   .message-empty {
-    min-width: 100%;
-    padding: 0;
+    min-width: auto;
+    padding: 0 14px;
     text-align: left;
   }
 
   .message-ticker-item span {
-    white-space: normal;
+    white-space: nowrap;
   }
 
   .participant-row {

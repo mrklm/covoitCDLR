@@ -4,6 +4,12 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.4.2] - Juillet 2026
+
+### Corrige
+
+- Le bandeau d'annonces defile aussi sur la version mobile.
+
 ## [1.4.1] - Juillet 2026
 
 ### Corrige
