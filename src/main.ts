@@ -1169,7 +1169,6 @@ function getJourneyMessageItems(items: Participant[]): Array<{
       .filter(
         ({ journey }) =>
           isJourneyVisible(journey) &&
-          journey.status !== 'unset' &&
           Boolean(journey.message.trim()),
       );
   });
@@ -1198,7 +1197,11 @@ function renderMessageBanner(items: Participant[]): void {
     .map(({ participant, journey, mode }) => {
       const modeLabel = mode === 'outbound' ? 'Aller' : 'Retour';
       const statusLabel =
-        journey.status === 'offer' ? 'propose un covoit' : 'cherche un covoit';
+        journey.status === 'offer'
+          ? 'propose un covoit'
+          : journey.status === 'search'
+            ? 'cherche un covoit'
+            : 'message covoit';
 
       return `
         <button
@@ -1386,7 +1389,11 @@ function openMessageDetailModal(participantId: string, mode: JourneyMode): void 
 
   const journey = getParticipantJourneys(participant.id)[mode];
   const statusLabel =
-    journey.status === 'offer' ? 'Propose un covoit' : 'Cherche un covoit';
+    journey.status === 'offer'
+      ? 'Propose un covoit'
+      : journey.status === 'search'
+        ? 'Cherche un covoit'
+        : 'Non renseigné';
 
   title?.replaceChildren(
     document.createTextNode(
