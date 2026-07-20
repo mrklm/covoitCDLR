@@ -235,6 +235,10 @@ let pendingCityTarget: PendingCityTarget = null;
 let participantSourceNotice = '';
 let activeMobileView: 'map' | 'participants' = 'map';
 
+function isMobileViewport(): boolean {
+  return window.matchMedia('(max-width: 820px)').matches;
+}
+
 const themes: ThemeName[] = [
   'sombre-midnight-garage',
   'sombre-air-klm-night-flight',
@@ -1180,8 +1184,16 @@ function renderMessageBanner(items: Participant[]): void {
   }
 
   const messages = getJourneyMessageItems(items);
+  const showEmptyMobileBanner = messages.length === 0 && isMobileViewport();
 
-  banner.hidden = messages.length === 0;
+  banner.hidden = messages.length === 0 && !showEmptyMobileBanner;
+
+  if (showEmptyMobileBanner) {
+    track.innerHTML =
+      '<span class="message-empty">Aucun message covoit actif pour le moment.</span>';
+    return;
+  }
+
   track.innerHTML = messages
     .map(({ participant, journey, mode }) => {
       const modeLabel = mode === 'outbound' ? 'Aller' : 'Retour';
@@ -2112,6 +2124,7 @@ void initializeApp();
 window.addEventListener('resize', () => {
   map.invalidateSize();
   addParticipantMarkers(appParticipants);
+  renderMessageBanner(appParticipants);
 });
 
 map.on('zoomend', () => {

@@ -70,9 +70,10 @@
       id="message-banner"
       class="message-banner"
       aria-label="Messages de covoiturage"
-      hidden
     >
-      <div id="message-track" class="message-track"></div>
+      <div id="message-track" class="message-track">
+        <span class="message-empty">Aucun message covoit actif pour le moment.</span>
+      </div>
     </section>
 
     <nav class="mobile-view-switcher" aria-label="Affichage mobile">
@@ -88,18 +89,33 @@
         type="button"
         data-mobile-view="participants"
       >
-        Participants
+        Participant-e-s
       </button>
     </nav>
 
     <main class="app-layout">
       <section class="map-panel" aria-label="Carte des participants">
         <div class="map-toolbar" aria-label="Choix du trajet affiché">
-          <label for="journey-mode">Carte affichée</label>
-          <select id="journey-mode">
-            <option value="outbound">Allers</option>
-            <option value="return">Retours</option>
-          </select>
+          <div id="map-brightness-controls" class="map-brightness-controls" hidden>
+            <label class="map-brightness-field" for="map-brightness">
+              <span>Luminosité</span>
+              <input
+                id="map-brightness"
+                type="range"
+                min="45"
+                max="110"
+                step="5"
+              />
+              <span id="map-brightness-value">70 %</span>
+            </label>
+          </div>
+          <div class="journey-mode-field">
+            <label for="journey-mode">Carte affichée</label>
+            <select id="journey-mode">
+              <option value="outbound">Allers</option>
+              <option value="return">Retours</option>
+            </select>
+          </div>
         </div>
         <div id="map"></div>
       </section>
@@ -339,27 +355,10 @@
             Le thème choisi est mémorisé dans ce navigateur et sera conservé à
             la prochaine ouverture de l'application.
           </p>
-          <p id="map-brightness-hint" class="option-hint">
-            Le réglage de luminosité de la carte apparaît avec les thèmes
-            sombres.
+          <p class="option-hint">
+            Le potentiomètre de luminosité de la carte apparaît au-dessus de la
+            carte avec les thèmes sombres.
           </p>
-          <div id="map-brightness-controls" class="map-brightness-controls" hidden>
-            <label class="range-field" for="map-brightness">
-              Luminosité de la carte
-              <input
-                id="map-brightness"
-                type="range"
-                min="45"
-                max="110"
-                step="5"
-              />
-              <span id="map-brightness-value">70 %</span>
-            </label>
-            <p>
-              Ce réglage est mémorisé dans ce navigateur et apparaît seulement
-              avec les thèmes sombres.
-            </p>
-          </div>
 
           <div class="credits">
             <p>covoitCDLR v1.4.0 - appli TypeScript - Juillet 2026</p>

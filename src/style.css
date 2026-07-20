@@ -427,6 +427,15 @@ h2 {
   color: var(--muted);
 }
 
+.message-empty {
+  min-height: 30px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 @keyframes message-scroll {
   from {
     transform: translateX(100vw);
@@ -478,7 +487,7 @@ h2 {
 .map-toolbar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 10px;
   min-height: 44px;
 }
@@ -487,6 +496,13 @@ h2 {
   color: var(--muted);
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.journey-mode-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
 }
 
 select,
@@ -1044,6 +1060,7 @@ button:disabled {
 .map-brightness-controls {
   display: grid;
   gap: 8px;
+  width: min(280px, 44vw);
 }
 
 .map-brightness-controls[hidden] {
@@ -1052,6 +1069,27 @@ button:disabled {
 
 .map-brightness-controls p {
   margin: 0;
+}
+
+.map-brightness-field {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.map-brightness-field input {
+  min-height: 30px;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.map-brightness-field span:last-child {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .option-hint {
@@ -1189,6 +1227,61 @@ button:disabled {
     border-color: var(--accent);
     background: var(--accent);
     color: #ffffff;
+  }
+
+  .map-toolbar {
+    display: grid;
+    grid-template-columns: auto minmax(118px, 1fr);
+    gap: 10px;
+    align-items: end;
+  }
+
+  .journey-mode-field {
+    display: grid;
+    gap: 4px;
+    margin-left: 0;
+  }
+
+  .map-brightness-controls {
+    width: 100%;
+  }
+
+  .map-brightness-field {
+    grid-template-columns: 1fr auto;
+    gap: 4px 8px;
+  }
+
+  .map-brightness-field span:first-child {
+    grid-column: 1 / -1;
+    font-size: 0.78rem;
+  }
+
+  .map-brightness-field input {
+    min-width: 0;
+  }
+
+  .message-banner {
+    border-top: 1px solid var(--border);
+  }
+
+  .message-track {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    padding: 8px 14px;
+    overflow-x: auto;
+    animation: none;
+  }
+
+  .message-ticker-item,
+  .message-empty {
+    min-width: 100%;
+    padding: 0;
+    text-align: left;
+  }
+
+  .message-ticker-item span {
+    white-space: normal;
   }
 
   .participant-row {
