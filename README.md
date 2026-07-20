@@ -4,7 +4,7 @@
 
 Application web de covoiturage pour l'equipe technique du festival Chalon dans la rue.
 
-covoitCDLR affiche une carte interactive permettant de visualiser les participants, leurs villes, et les trajets proposes vers ou depuis Chalon-sur-Saone.
+covoitCDLR affiche une carte interactive permettant de visualiser les participant-e-s, leurs villes, les annonces de covoiturage et les trajets proposes vers ou depuis Chalon-sur-Saone.
 
 ## Captures d'ecran
 
@@ -32,6 +32,12 @@ Pour le retour, la ville de depart est toujours Chalon-sur-Saone. La ville d'arr
 
 Les trajets proposes apparaissent sur la carte sous forme de lignes continues, avec une couleur differente par personne.
 
+Le bouton `Message` permet de publier une annonce courte, par exemple pour dire que l'on cherche une place ou que l'on propose un covoit. Les annonces actives defilent dans le bandeau sous l'en-tete. En cliquant sur une annonce, vous voyez le message complet et les coordonnees de la personne.
+
+Les trajets et annonces dont la date est passee sont masques automatiquement.
+
+Avec les themes sombres, un potentiometre de luminosite apparait au-dessus de la carte pour assombrir les tuiles OpenStreetMap.
+
 Sur telephone, un bouton permet de basculer entre l'affichage `Carte` et l'affichage `Participants`.
 
 Les informations sont partagees avec les autres utilisateurs grace a Supabase. Apres modification, les donnees sont enregistrees automatiquement.
@@ -46,10 +52,16 @@ Les informations sont partagees avec les autres utilisateurs grace a Supabase. A
 - Gestion separee des trajets aller et retour.
 - Statuts : non renseigne, propose un covoit, cherche un covoit.
 - Villes-etapes ajoutables ou supprimables.
+- Ajout de villes depuis l'interface avec recherche GPS via `geo.api.gouv.fr`.
 - Lignes de trajet continues, colorees par participant.
+- Bandeau d'annonces defilant sur ordinateur et telephone.
+- Popup de detail pour consulter une annonce et les coordonnees de contact.
+- Masquage automatique des trajets et annonces passes.
 - Synchronisation des trajets avec Supabase.
+- Synchronisation des villes ajoutees avec Supabase.
 - Chargement securise des techniciens depuis Supabase via une fonction RPC protegee par mot de passe.
 - Themes visuels configurables depuis la fenetre `Aide et options`.
+- Potentiometre de luminosite de carte pour les themes sombres.
 - Interface responsive ordinateur et telephone.
 
 ## Technologies
@@ -81,7 +93,7 @@ La sortie de production est generee dans `dist/`.
 
 ## Versions
 
-La version actuelle est definie dans `package.json`.
+La version actuelle est definie dans `package.json` et affichee dans l'en-tete de l'application.
 
 L'historique des changements est suivi dans [CHANGELOG.md](CHANGELOG.md).
 
@@ -232,17 +244,41 @@ Si une ville de technicien n'a pas encore de coordonnees dans Supabase, l'applic
 
 ## Ajouter une nouvelle ville
 
-Pour ajouter une ville manuellement :
+Depuis l'application, selectionner `+ Ajouter une ville...` dans une liste de villes. Le formulaire interroge `geo.api.gouv.fr`, propose un resultat avec code postal si disponible, puis enregistre la ville dans `public.custom_cities`.
 
-1. Recuperer ses coordonnees GPS.
-2. Ajouter une entree dans `cityOptions`.
-3. Verifier avec :
+La ville devient ensuite disponible pour tous les utilisateurs.
+
+Pour ajouter une ville directement dans le code, il reste possible de modifier `cityOptions` dans `src/main.ts`, puis de verifier avec :
 
 ```bash
 npm run build
 ```
 
-Pour une evolution future, l'ajout libre de ville pourrait interroger l'API publique `geo.api.gouv.fr` depuis le navigateur, puis ajouter la ville au trajet avec ses coordonnees.
+## Pour les geeks
+
+covoitCDLR est une application frontend pure : aucune API backend maison n'est deployee. Le navigateur charge l'application statique construite par Vite, puis communique directement avec Supabase.
+
+Au demarrage, l'utilisateur entre le mot de passe d'acces. Ce mot de passe sert a appeler la fonction RPC `public.get_technicians(access_password text)`, qui renvoie les techniciens si le hash correspond. Les tables privees ne sont pas lues directement par le client.
+
+Les trajets sont stockes dans `public.covoit_journeys`, avec une ligne par participant et par sens de trajet :
+
+```text
+participant_id + journey_mode
+```
+
+Chaque ligne contient le statut, la date, la ville de depart ou d'arrivee modifiable, les etapes, le message et la date de mise a jour.
+
+Les villes ajoutees depuis l'interface sont stockees dans `public.custom_cities`. Elles completent la liste integree dans `cityOptions`.
+
+L'application garde aussi une copie locale dans `localStorage` pour rester reactive et conserver les reglages du navigateur : theme, luminosite de carte, villes et trajets deja charges. Supabase reste la source partagee entre appareils.
+
+Les mises a jour Supabase sont ecoutees en temps reel avec les subscriptions Realtime. Quand un trajet, un message ou une ville est modifie, les autres appareils peuvent actualiser leur affichage sans redeploiement de l'application.
+
+Les lignes de trajet sont dessinees avec Leaflet a partir des coordonnees GPS des villes. Les personnes en statut `Cherche un covoit` gardent leur fiche et leur annonce, mais ne generent pas de trace d'itineraire.
+
+Les trajets et annonces passes sont filtres cote client avec la date du jour. La carte bascule par defaut sur les retours a partir du 23 juillet 2026.
+
+Le bouton `Proposer une amelioration` de l'aide ouvre un mail vers `clementmorel@free.fr`.
 
 ## Deploiement GitHub Pages
 

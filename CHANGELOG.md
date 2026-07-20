@@ -4,6 +4,17 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.4.3] - Juillet 2026
+
+### Ajoute
+
+- Section `Pour les geeks` dans l'aide avec une explication detaillee du fonctionnement de l'application.
+- Bouton `Proposer une amelioration` ouvrant un mail vers le contact du projet.
+
+### Modifie
+
+- README mis a jour avec les annonces, la luminosite de carte, les villes personnalisees et le fonctionnement Supabase.
+
 ## [1.4.2] - Juillet 2026
 
 ### Corrige
