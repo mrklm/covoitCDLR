@@ -123,7 +123,7 @@ begin
     trim(phone_value),
     color_value
   )
-  on conflict (id) do update set
+  on conflict on constraint technicians_pkey do update set
     last_name = excluded.last_name,
     first_name = excluded.first_name,
     city = excluded.city,

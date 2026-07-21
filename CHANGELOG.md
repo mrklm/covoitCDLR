@@ -4,6 +4,12 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.5.2] - Juillet 2026
+
+### Corrige
+
+- Correction de la fonction Supabase `upsert_technician` quand l'identifiant `id` est ambigu pendant l'ajout d'un-e participant-e.
+
 ## [1.5.1] - Juillet 2026
 
 ### Corrige
