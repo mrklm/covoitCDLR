@@ -59,3 +59,90 @@ revoke all on public.technicians from anon;
 revoke all on public.technicians from authenticated;
 
 grant execute on function public.get_technicians(text) to anon;
+
+create or replace function public.upsert_technician(
+  access_password text,
+  technician_id text,
+  last_name_value text,
+  first_name_value text,
+  city_value text,
+  latitude_value double precision,
+  longitude_value double precision,
+  phone_value text,
+  color_value text
+)
+returns table (
+  id text,
+  last_name text,
+  first_name text,
+  city text,
+  latitude double precision,
+  longitude double precision,
+  phone text,
+  color text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if encode(extensions.digest(access_password, 'sha256'), 'hex') <> '06fabe7992014b72287461d5a55221f209d6ac71781bae72cdb601a801b10185' then
+    raise exception 'Invalid password';
+  end if;
+
+  insert into public.technicians (
+    id,
+    last_name,
+    first_name,
+    city,
+    latitude,
+    longitude,
+    phone,
+    color
+  )
+  values (
+    technician_id,
+    upper(trim(last_name_value)),
+    trim(first_name_value),
+    trim(city_value),
+    latitude_value,
+    longitude_value,
+    trim(phone_value),
+    color_value
+  )
+  on conflict (id) do update set
+    last_name = excluded.last_name,
+    first_name = excluded.first_name,
+    city = excluded.city,
+    latitude = excluded.latitude,
+    longitude = excluded.longitude,
+    phone = excluded.phone,
+    color = excluded.color,
+    updated_at = now();
+
+  return query
+  select
+    t.id,
+    t.last_name,
+    t.first_name,
+    t.city,
+    t.latitude,
+    t.longitude,
+    t.phone,
+    t.color
+  from public.technicians t
+  where t.id = technician_id;
+end;
+$$;
+
+grant execute on function public.upsert_technician(
+  text,
+  text,
+  text,
+  text,
+  text,
+  double precision,
+  double precision,
+  text,
+  text
+) to anon;

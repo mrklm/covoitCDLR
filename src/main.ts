@@ -86,11 +86,17 @@ type GeoApiCommune = {
   };
 };
 
-type PendingCityTarget = {
-  participantId: string;
-  mode: JourneyMode;
-  fieldName: string;
-} | null;
+type PendingCityTarget =
+  | {
+      type: 'journey';
+      participantId: string;
+      mode: JourneyMode;
+      fieldName: string;
+    }
+  | {
+      type: 'new-participant';
+    }
+  | null;
 
 const storageKey = 'covoitcdlr-journeys';
 const customCitiesStorageKey = 'covoitcdlr-custom-cities';
@@ -234,6 +240,7 @@ let customCities: CityOption[] = [];
 let pendingCityTarget: PendingCityTarget = null;
 let participantSourceNotice = '';
 let activeMobileView: 'map' | 'participants' = 'map';
+let currentAccessPassword: string | null = null;
 
 function isMobileViewport(): boolean {
   return window.matchMedia('(max-width: 820px)').matches;
@@ -734,6 +741,59 @@ function mapTechnicianToParticipant(
   };
 }
 
+function sortParticipants(participants: Participant[]): Participant[] {
+  return [...participants].sort((participantA, participantB) => {
+    const lastNameComparison = participantA.lastName.localeCompare(
+      participantB.lastName,
+      'fr',
+    );
+
+    return lastNameComparison !== 0
+      ? lastNameComparison
+      : participantA.firstName.localeCompare(participantB.firstName, 'fr');
+  });
+}
+
+function createParticipantId(firstName: string, lastName: string): string {
+  const baseId = `${getCityKey(firstName)}-${getCityKey(lastName)}`
+    .replace(/\s+/g, '-')
+    .replace(/^-|-$/g, '');
+  const suffix = Date.now().toString(36);
+
+  return `${baseId || 'participant'}-${suffix}`;
+}
+
+function getNextParticipantColor(): string {
+  return participantColors[appParticipants.length % participantColors.length];
+}
+
+async function saveParticipantToSupabase(
+  participant: Participant,
+): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase || !currentAccessPassword) {
+    return false;
+  }
+
+  const { error } = await supabase.rpc('upsert_technician', {
+    access_password: currentAccessPassword,
+    technician_id: participant.id,
+    last_name_value: participant.lastName,
+    first_name_value: participant.firstName,
+    city_value: participant.city,
+    latitude_value: participant.latitude,
+    longitude_value: participant.longitude,
+    phone_value: participant.phone,
+    color_value: participant.color,
+  });
+
+  if (error) {
+    console.warn('Ajout du participant impossible dans Supabase.', error);
+    return false;
+  }
+
+  return true;
+}
+
 function getFallbackParticipants(notice: string): Participant[] {
   participantSourceNotice = notice;
 
@@ -892,6 +952,15 @@ function buildEndpointCityOptions(selectedValue: string): string {
     .join('') +
     addCityOption
   );
+}
+
+function buildParticipantCityOptions(selectedValue: string): string {
+  const placeholderSelected = selectedValue ? '' : 'selected';
+
+  return `
+    <option value="" ${placeholderSelected}>Choisir une ville</option>
+    ${buildEndpointCityOptions(selectedValue)}
+  `;
 }
 
 function renderFixedCity(label: string, cityName: string): string {
@@ -1332,6 +1401,12 @@ function setMobileView(view: 'map' | 'participants'): void {
   }
 }
 
+function syncModalOpenState(): void {
+  const hasOpenModal = Boolean(document.querySelector('.modal:not([hidden])'));
+
+  document.body.classList.toggle('modal-open', hasOpenModal);
+}
+
 function closeMessageModal(): void {
   const modal = document.querySelector<HTMLElement>('#message-modal');
 
@@ -1495,6 +1570,106 @@ function openMessageDetailModal(participantId: string, mode: JourneyMode): void 
   document.body.classList.add('modal-open');
 }
 
+function setParticipantFormNotice(message: string): void {
+  const notice = document.querySelector<HTMLElement>('#participant-form-notice');
+
+  if (!notice) {
+    return;
+  }
+
+  notice.textContent = message;
+  notice.hidden = !message;
+}
+
+function closeParticipantModal(): void {
+  const modal = document.querySelector<HTMLElement>('#participant-modal');
+  const form = document.querySelector<HTMLFormElement>('#participant-form');
+
+  if (!modal) {
+    return;
+  }
+
+  modal.hidden = true;
+  form?.reset();
+  setParticipantFormNotice('');
+  syncModalOpenState();
+}
+
+function openParticipantModal(): void {
+  const modal = document.querySelector<HTMLElement>('#participant-modal');
+  const citySelect =
+    document.querySelector<HTMLSelectElement>('#participant-city');
+  const firstNameInput =
+    document.querySelector<HTMLInputElement>('#participant-first-name');
+
+  if (!modal || !citySelect) {
+    return;
+  }
+
+  citySelect.innerHTML = buildParticipantCityOptions('');
+  citySelect.value = '';
+  setParticipantFormNotice('');
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+  firstNameInput?.focus();
+}
+
+async function addParticipantFromForm(form: HTMLFormElement): Promise<void> {
+  const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+  const formData = new FormData(form);
+  const firstName = String(formData.get('first-name') ?? '').trim();
+  const lastName = String(formData.get('last-name') ?? '').trim();
+  const cityName = String(formData.get('city') ?? '').trim();
+  const phone = String(formData.get('phone') ?? '').trim();
+  const city = findCityByName(cityName);
+
+  if (!firstName || !lastName || !cityName || !phone) {
+    setParticipantFormNotice('Tous les champs sont obligatoires.');
+    return;
+  }
+
+  if (!hasCityCoordinates(city)) {
+    setParticipantFormNotice(
+      'Choisissez une ville avec coordonnées GPS ou ajoutez-la avant de valider.',
+    );
+    return;
+  }
+
+  const participant: Participant = {
+    id: createParticipantId(firstName, lastName),
+    firstName,
+    lastName: lastName.toUpperCase(),
+    city: city.name,
+    latitude: city.latitude,
+    longitude: city.longitude,
+    phone,
+    color: getNextParticipantColor(),
+  };
+
+  submitButton?.setAttribute('disabled', 'true');
+  setParticipantFormNotice('Ajout en cours...');
+
+  const isShared = await saveParticipantToSupabase(participant);
+
+  appParticipants = sortParticipants([...appParticipants, participant]);
+  selectedParticipantId = participant.id;
+  editingParticipantId = null;
+  addParticipantMarkers(appParticipants);
+  renderParticipantList(appParticipants);
+  drawRoutes(appParticipants);
+  renderMessageBanner(appParticipants);
+  submitButton?.removeAttribute('disabled');
+
+  if (!isShared) {
+    setParticipantFormNotice(
+      "Participant-e ajouté-e sur cet appareil, mais pas partagé-e. Réexécute le fichier supabase/technicians.sql dans Supabase.",
+    );
+    return;
+  }
+
+  closeParticipantModal();
+}
+
 function closeCityModal(): void {
   const modal = document.querySelector<HTMLElement>('#city-modal');
   const result = document.querySelector<HTMLElement>('#city-search-result');
@@ -1513,7 +1688,7 @@ function closeCityModal(): void {
   }
 
   form?.reset();
-  document.body.classList.remove('modal-open');
+  syncModalOpenState();
 }
 
 function openCityModal(participantId: string, fieldName: string): void {
@@ -1526,9 +1701,34 @@ function openCityModal(participantId: string, fieldName: string): void {
   }
 
   pendingCityTarget = {
+    type: 'journey',
     participantId,
     mode: activeMode,
     fieldName,
+  };
+
+  result?.replaceChildren();
+
+  if (result) {
+    result.hidden = true;
+  }
+
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+  cityNameInput.focus();
+}
+
+function openCityModalForNewParticipant(): void {
+  const modal = document.querySelector<HTMLElement>('#city-modal');
+  const cityNameInput = document.querySelector<HTMLInputElement>('#city-name');
+  const result = document.querySelector<HTMLElement>('#city-search-result');
+
+  if (!modal || !cityNameInput) {
+    return;
+  }
+
+  pendingCityTarget = {
+    type: 'new-participant',
   };
 
   result?.replaceChildren();
@@ -1637,6 +1837,18 @@ function setPendingTargetCity(cityName: string): void {
     return;
   }
 
+  if (pendingCityTarget.type === 'new-participant') {
+    const citySelect =
+      document.querySelector<HTMLSelectElement>('#participant-city');
+
+    if (citySelect) {
+      citySelect.innerHTML = buildParticipantCityOptions(cityName);
+      citySelect.value = cityName;
+    }
+
+    return;
+  }
+
   const journey = getParticipantJourneys(pendingCityTarget.participantId)[
     pendingCityTarget.mode
   ];
@@ -1687,6 +1899,10 @@ function bindControls(): void {
     document.querySelector<HTMLTextAreaElement>('#message-text');
   const cityForm = document.querySelector<HTMLFormElement>('#city-form');
   const cityResult = document.querySelector<HTMLElement>('#city-search-result');
+  const participantForm =
+    document.querySelector<HTMLFormElement>('#participant-form');
+  const participantCitySelect =
+    document.querySelector<HTMLSelectElement>('#participant-city');
 
   setMobileView(activeMobileView);
 
@@ -1832,6 +2048,26 @@ function bindControls(): void {
     saveMessageFromModal(messageForm);
   });
 
+  participantCitySelect?.addEventListener('change', () => {
+    if (participantCitySelect.value !== addCityValue) {
+      return;
+    }
+
+    participantCitySelect.value = '';
+    openCityModalForNewParticipant();
+  });
+
+  participantForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    void addParticipantFromForm(participantForm);
+  });
+
+  document
+    .querySelectorAll<HTMLElement>('[data-participant-close]')
+    .forEach((item) => {
+      item.addEventListener('click', closeParticipantModal);
+    });
+
   document.querySelectorAll<HTMLElement>('[data-message-close]').forEach((item) => {
     item.addEventListener('click', closeMessageModal);
   });
@@ -1969,6 +2205,8 @@ function bindHelpOptions(): void {
   const helpButton = document.querySelector<HTMLButtonElement>('#help-button');
   const optionsButton =
     document.querySelector<HTMLButtonElement>('#options-button');
+  const addParticipantButton =
+    document.querySelector<HTMLButtonElement>('#add-participant-button');
   const themeSelect = document.querySelector<HTMLSelectElement>('#theme-select');
   const mapBrightnessInput =
     document.querySelector<HTMLInputElement>('#map-brightness');
@@ -1988,6 +2226,7 @@ function bindHelpOptions(): void {
 
   helpButton?.addEventListener('click', () => openModal('#help-modal'));
   optionsButton?.addEventListener('click', () => openModal('#options-modal'));
+  addParticipantButton?.addEventListener('click', () => openParticipantModal());
 
   document
     .querySelectorAll<HTMLElement>('[data-help-close], [data-options-close]')
@@ -2014,6 +2253,7 @@ function bindHelpOptions(): void {
       closeHelpAndOptionsModals();
       closeMessageModal();
       closeMessageDetailModal();
+      closeParticipantModal();
       closeCityModal();
     }
   });
@@ -2166,6 +2406,7 @@ function subscribeToCustomCities(): void {
 
 async function initializeApp(): Promise<void> {
   const accessPassword = await bindAccessGate();
+  currentAccessPassword = accessPassword;
   appParticipants = await loadParticipants(accessPassword);
   customCities = await loadCustomCities();
   selectedParticipantId = appParticipants[0]?.id ?? '';

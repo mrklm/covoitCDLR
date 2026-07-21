@@ -51,7 +51,7 @@
           alt="Logo Chalon dans la rue"
         />
         <div class="header-title">
-          <h1>covoitCDLR <span class="app-version">v1.4.11</span></h1>
+          <h1>covoitCDLR <span class="app-version">v1.5.0</span></h1>
           <p>Festival Chalon dans la rue</p>
         </div>
       </div>
@@ -390,9 +390,16 @@
             Le potentiomètre de luminosité de la carte apparaît au-dessus de la
             carte avec les thèmes sombres.
           </p>
+          <button
+            id="add-participant-button"
+            class="option-action-button"
+            type="button"
+          >
+            Ajouter participant-e-s
+          </button>
 
           <div class="credits">
-            <p>covoitCDLR v1.4.11 - appli TypeScript - Juillet 2026</p>
+            <p>covoitCDLR v1.5.0 - appli TypeScript - Juillet 2026</p>
             <p>Développé par Klm - contact : clementmorel@free.fr</p>
             <p>
               <a href="https://github.com/mrklm/covoitCDLR" target="_blank" rel="noreferrer">
@@ -505,6 +512,66 @@
             Fermer
           </button>
         </footer>
+      </section>
+    </div>
+
+    <div
+      id="participant-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="participant-modal-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-participant-close></div>
+      <section class="modal-panel participant-modal-panel">
+        <header class="modal-header">
+          <h2 id="participant-modal-title">Ajouter participant-e-s</h2>
+          <button class="modal-close-button" type="button" data-participant-close>
+            Fermer
+          </button>
+        </header>
+        <form id="participant-form" class="participant-form">
+          <label>
+            Prénom
+            <input
+              id="participant-first-name"
+              name="first-name"
+              type="text"
+              autocomplete="given-name"
+              required
+            />
+          </label>
+          <label>
+            Nom
+            <input
+              id="participant-last-name"
+              name="last-name"
+              type="text"
+              autocomplete="family-name"
+              required
+            />
+          </label>
+          <label>
+            Ville
+            <select id="participant-city" name="city" required></select>
+          </label>
+          <label>
+            N° de téléphone
+            <input
+              id="participant-phone"
+              name="phone"
+              type="tel"
+              autocomplete="tel"
+              required
+            />
+          </label>
+          <p id="participant-form-notice" class="source-notice" hidden></p>
+          <div class="message-form-footer">
+            <span>La fiche sera ajoutée à la liste partagée.</span>
+            <button type="submit">Ajouter</button>
+          </div>
+        </form>
       </section>
     </div>
 

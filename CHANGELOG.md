@@ -4,6 +4,14 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.5.0] - Juillet 2026
+
+### Ajoute
+
+- Bouton `Ajouter participant-e-s` dans les options.
+- Popup de creation de participant-e avec prenom, nom, ville et telephone.
+- Ajout partage dans Supabase via une fonction RPC protegee par mot de passe.
+
 ## [1.4.11] - Juillet 2026
 
 ### Modifie

@@ -849,6 +849,10 @@ button:disabled {
   background: rgb(20 22 24 / 55%);
 }
 
+#city-modal {
+  z-index: 2100;
+}
+
 .modal-panel {
   position: relative;
   display: grid;
@@ -945,21 +949,25 @@ button:disabled {
   filter: brightness(1.05);
 }
 
-.message-modal-panel {
+.message-modal-panel,
+.participant-modal-panel {
   width: min(520px, 100%);
 }
 
-.message-form {
+.message-form,
+.participant-form {
   display: grid;
   gap: 12px;
 }
 
-.message-form p {
+.message-form p,
+.participant-form p {
   margin: 0;
   color: var(--muted);
 }
 
-.message-form label {
+.message-form label,
+.participant-form label {
   display: grid;
   gap: 6px;
   color: var(--muted);
@@ -1156,6 +1164,23 @@ button:disabled {
 
 .option-hint[hidden] {
   display: none;
+}
+
+.option-action-button {
+  justify-self: start;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.option-action-button:hover {
+  filter: brightness(1.05);
 }
 
 .range-field input {
