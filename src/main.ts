@@ -1155,12 +1155,16 @@ function renderParticipantList(items: Participant[]): void {
   }
 
   if (items.length === 0) {
-    list.innerHTML = '<li class="empty-list">Aucun participant à afficher.</li>';
+    list.innerHTML = `
+      <li class="empty-list">Aucun participant à afficher.</li>
+      ${renderAddParticipantListItem()}
+    `;
     return;
   }
 
-  list.innerHTML = items
-    .map((participant) => {
+  list.innerHTML =
+    items
+      .map((participant) => {
       const isSelected = participant.id === selectedParticipantId;
       const isEditing = participant.id === editingParticipantId;
       const journey = getParticipantJourneys(participant.id)[activeMode];
@@ -1200,8 +1204,18 @@ function renderParticipantList(items: Participant[]): void {
           ${isEditing ? renderJourneyForm(participant) : ''}
         </li>
       `;
-    })
-    .join('');
+      })
+      .join('') + renderAddParticipantListItem();
+}
+
+function renderAddParticipantListItem(): string {
+  return `
+    <li class="add-participant-list-item">
+      <button class="add-participant-list-button" type="button">
+        Ajouter participant-e-s
+      </button>
+    </li>
+  `;
 }
 
 function getRoutePoints(participant: Participant, mode: JourneyMode): L.LatLngExpression[] {
@@ -1984,6 +1998,15 @@ function bindControls(): void {
   });
 
   list?.addEventListener('click', (event) => {
+    const addParticipantButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '.add-participant-list-button',
+    );
+
+    if (addParticipantButton) {
+      openParticipantModal();
+      return;
+    }
+
     const stepButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
       '[data-step-action]',
     );
