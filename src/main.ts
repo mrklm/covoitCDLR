@@ -1275,10 +1275,13 @@ function drawRoutes(items: Participant[]): void {
       return;
     }
 
+    const defaultWeight = isMobileViewport() ? 6 : 4;
+    const selectedWeight = isMobileViewport() ? 8 : 6;
+
     L.polyline(routePoints, {
       color: participant.color,
-      weight: isSelected ? 6 : 4,
-      opacity: isSelected ? 0.95 : 0.7,
+      weight: isSelected ? selectedWeight : defaultWeight,
+      opacity: isSelected ? 0.95 : 0.82,
       lineCap: 'round',
       lineJoin: 'round',
     })
@@ -1286,6 +1289,25 @@ function drawRoutes(items: Participant[]): void {
         `<strong>${escapeHtml(formatParticipantName(participant))}</strong><span>${activeMode === 'outbound' ? 'Aller' : 'Retour'}</span>`,
       )
       .addTo(routeLayer);
+  });
+
+  routeLayer.eachLayer((layer) => {
+    if ('bringToFront' in layer && typeof layer.bringToFront === 'function') {
+      layer.bringToFront();
+    }
+  });
+}
+
+function refreshVisibleMapLayers(): void {
+  requestAnimationFrame(() => {
+    map.invalidateSize();
+    addParticipantMarkers(appParticipants);
+    drawRoutes(appParticipants);
+
+    requestAnimationFrame(() => {
+      map.invalidateSize();
+      drawRoutes(appParticipants);
+    });
   });
 }
 
@@ -1348,6 +1370,11 @@ function renderMessageBanner(items: Participant[]): void {
     return;
   }
 
+  const messageSeparator =
+    messages.length > 1
+      ? '<span class="message-separator" aria-hidden="true">-</span>'
+      : '';
+
   track.innerHTML = messages
     .map(({ participant, journey, mode }) => {
       const shortDate = formatShortDate(journey.date);
@@ -1365,7 +1392,7 @@ function renderMessageBanner(items: Participant[]): void {
         </button>
       `;
     })
-    .join('');
+    .join(messageSeparator);
 }
 
 function readJourneyFromForm(form: HTMLFormElement): Journey {
@@ -1444,11 +1471,7 @@ function setMobileView(view: 'map' | 'participants'): void {
     });
 
   if (view === 'map') {
-    requestAnimationFrame(() => {
-      map.invalidateSize();
-      addParticipantMarkers(appParticipants);
-      drawRoutes(appParticipants);
-    });
+    refreshVisibleMapLayers();
   }
 }
 
@@ -1993,7 +2016,7 @@ function bindControls(): void {
     renderMessageBanner(appParticipants);
 
     if (activeMobileView === 'map') {
-      map.invalidateSize();
+      refreshVisibleMapLayers();
     }
   });
 

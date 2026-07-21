@@ -4,6 +4,13 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.5.4] - Juillet 2026
+
+### Corrige
+
+- Renforcement du redessin des lignes de trajets sur la carte mobile.
+- Separation des messages du bandeau defilant par un tiret quand plusieurs annonces sont actives.
+
 ## [1.5.3] - Juillet 2026
 
 ### Ajoute

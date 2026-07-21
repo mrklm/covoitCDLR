@@ -434,6 +434,13 @@ h2 {
   color: var(--muted);
 }
 
+.message-separator {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .message-empty {
   min-height: 30px;
   padding: 0 14px;
