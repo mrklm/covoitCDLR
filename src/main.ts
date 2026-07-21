@@ -677,6 +677,29 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#039;');
 }
 
+function formatNamePart(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase('fr-FR')
+    .replace(/(^|[\s'-])(\p{L})/gu, (match, separator: string, letter: string) =>
+      `${separator}${letter.toLocaleUpperCase('fr-FR')}`,
+    );
+}
+
+function formatParticipantName(participant: Participant): string {
+  return `${formatNamePart(participant.firstName)} ${formatNamePart(participant.lastName)}`;
+}
+
+function getParticipantIdentityKey(participant: Participant): string {
+  const phoneKey = participant.phone.replace(/\D/g, '');
+
+  return [
+    getCityKey(participant.firstName),
+    getCityKey(participant.lastName),
+    phoneKey,
+  ].join('|');
+}
+
 function getTodayValue(): string {
   const today = new Date();
   const year = today.getFullYear();
@@ -731,14 +754,28 @@ function mapTechnicianToParticipant(
 
   return {
     id: technician.id,
-    firstName: technician.first_name,
-    lastName: technician.last_name,
+    firstName: formatNamePart(technician.first_name),
+    lastName: formatNamePart(technician.last_name),
     city: technician.city,
     latitude,
     longitude,
     phone: technician.phone,
     color: technician.color ?? participantColors[index % participantColors.length],
   };
+}
+
+function dedupeParticipants(participants: Participant[]): Participant[] {
+  const participantsByKey = new Map<string, Participant>();
+
+  participants.forEach((participant) => {
+    const identityKey = getParticipantIdentityKey(participant);
+
+    if (!participantsByKey.has(identityKey)) {
+      participantsByKey.set(identityKey, participant);
+    }
+  });
+
+  return Array.from(participantsByKey.values());
 }
 
 function sortParticipants(participants: Participant[]): Participant[] {
@@ -830,12 +867,12 @@ async function loadParticipants(accessPassword: string | null): Promise<Particip
 
   participantSourceNotice = '';
 
-  return remoteParticipants;
+  return sortParticipants(dedupeParticipants(remoteParticipants));
 }
 
 function formatParticipantPopup(participant: Participant): string {
   return `
-    <strong>${escapeHtml(participant.lastName)} ${escapeHtml(participant.firstName)}</strong>
+    <strong>${escapeHtml(formatParticipantName(participant))}</strong>
     <span>Ville : ${escapeHtml(participant.city)}</span>
     <span>Téléphone : ${escapeHtml(participant.phone)}</span>
   `;
@@ -891,7 +928,7 @@ function addParticipantMarkers(items: Participant[]): void {
 
     L.marker(map.layerPointToLatLng(markerPoint), {
       icon: createParticipantIcon(participant),
-      title: `${participant.firstName} ${participant.lastName}`,
+      title: formatParticipantName(participant),
     })
       .bindPopup(formatParticipantPopup(participant))
       .on('click', () => {
@@ -1143,7 +1180,7 @@ function renderParticipantList(items: Participant[]): void {
             <button class="participant-button" type="button" data-participant-id="${participant.id}">
               <span class="participant-name">
                 <span class="participant-color" style="--participant-color: ${participant.color}"></span>
-                <strong>${participant.firstName} ${participant.lastName}</strong>
+                <strong>${escapeHtml(formatParticipantName(participant))}</strong>
                 ${getStatusIcon(journey.status)}
               </span>
               <span>
@@ -1232,7 +1269,7 @@ function drawRoutes(items: Participant[]): void {
       lineJoin: 'round',
     })
       .bindPopup(
-        `<strong>${participant.firstName} ${participant.lastName}</strong><span>${activeMode === 'outbound' ? 'Aller' : 'Retour'}</span>`,
+        `<strong>${escapeHtml(formatParticipantName(participant))}</strong><span>${activeMode === 'outbound' ? 'Aller' : 'Retour'}</span>`,
       )
       .addTo(routeLayer);
   });
@@ -1309,7 +1346,7 @@ function renderMessageBanner(items: Participant[]): void {
           data-message-participant-id="${participant.id}"
           data-message-mode="${mode}"
         >
-          <strong>${escapeHtml(participant.firstName)} ${escapeHtml(participant.lastName)}</strong>
+          <strong>${escapeHtml(formatParticipantName(participant))}</strong>
           <span>${escapeHtml(dateLabel)} ${escapeHtml(journey.message)}</span>
         </button>
       `;
@@ -1441,7 +1478,7 @@ function openMessageModal(participantId: string): void {
   form.dataset.participantId = participant.id;
   title?.replaceChildren(
     document.createTextNode(
-      `Message - ${participant.firstName} ${participant.lastName}`,
+      `Message - ${formatParticipantName(participant)}`,
     ),
   );
   textarea.value = journey.message;
@@ -1561,7 +1598,7 @@ function openMessageDetailModal(participantId: string, mode: JourneyMode): void 
       const modeLabel = itemMode === 'outbound' ? 'Aller' : 'Retour';
       const value = getMessageItemValue(participant.id, itemMode);
 
-      return `<option value="${value}">${escapeHtml(modeLabel)} - ${escapeHtml(participant.firstName)} ${escapeHtml(participant.lastName)}</option>`;
+      return `<option value="${value}">${escapeHtml(modeLabel)} - ${escapeHtml(formatParticipantName(participant))}</option>`;
     })
     .join('');
   select.value = getMessageItemValue(participantId, mode);
@@ -1637,14 +1674,25 @@ async function addParticipantFromForm(form: HTMLFormElement): Promise<void> {
 
   const participant: Participant = {
     id: createParticipantId(firstName, lastName),
-    firstName,
-    lastName: lastName.toUpperCase(),
+    firstName: formatNamePart(firstName),
+    lastName: formatNamePart(lastName),
     city: city.name,
     latitude: city.latitude,
     longitude: city.longitude,
     phone,
     color: getNextParticipantColor(),
   };
+  const existingParticipant = appParticipants.find(
+    (item) => getParticipantIdentityKey(item) === getParticipantIdentityKey(participant),
+  );
+
+  if (existingParticipant) {
+    selectedParticipantId = existingParticipant.id;
+    renderParticipantList(appParticipants);
+    addParticipantMarkers(appParticipants);
+    setParticipantFormNotice('Cette fiche existe déjà dans la liste.');
+    return;
+  }
 
   submitButton?.setAttribute('disabled', 'true');
   setParticipantFormNotice('Ajout en cours...');

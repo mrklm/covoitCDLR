@@ -85,10 +85,23 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  resolved_technician_id text;
 begin
   if encode(extensions.digest(access_password, 'sha256'), 'hex') <> '06fabe7992014b72287461d5a55221f209d6ac71781bae72cdb601a801b10185' then
     raise exception 'Invalid password';
   end if;
+
+  select t.id
+  into resolved_technician_id
+  from public.technicians t
+  where lower(trim(t.last_name)) = lower(trim(last_name_value))
+    and lower(trim(t.first_name)) = lower(trim(first_name_value))
+    and regexp_replace(t.phone, '\D', '', 'g') = regexp_replace(phone_value, '\D', '', 'g')
+  order by t.created_at
+  limit 1;
+
+  resolved_technician_id = coalesce(resolved_technician_id, technician_id);
 
   insert into public.technicians (
     id,
@@ -101,8 +114,8 @@ begin
     color
   )
   values (
-    technician_id,
-    upper(trim(last_name_value)),
+    resolved_technician_id,
+    trim(last_name_value),
     trim(first_name_value),
     trim(city_value),
     latitude_value,
@@ -131,7 +144,7 @@ begin
     t.phone,
     t.color
   from public.technicians t
-  where t.id = technician_id;
+  where t.id = resolved_technician_id;
 end;
 $$;
 

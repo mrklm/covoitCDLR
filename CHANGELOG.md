@@ -4,6 +4,14 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.5.1] - Juillet 2026
+
+### Corrige
+
+- Les noms et prenoms sont affiches avec une majuscule initiale.
+- Les participant-e-s en doublon sont masques a l'affichage.
+- L'ajout Supabase reutilise une fiche existante avec meme prenom, nom et telephone.
+
 ## [1.5.0] - Juillet 2026
 
 ### Ajoute
