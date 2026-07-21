@@ -1402,6 +1402,19 @@ function closeMessageDetailModal(): void {
 
   modal.hidden = true;
   document.body.classList.remove('modal-open');
+  restartMessageTicker();
+}
+
+function restartMessageTicker(): void {
+  const track = document.querySelector<HTMLElement>('#message-track');
+
+  if (!track) {
+    return;
+  }
+
+  track.style.animation = 'none';
+  void track.offsetWidth;
+  track.style.animation = '';
 }
 
 function renderMessageDetailContent(

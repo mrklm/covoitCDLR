@@ -4,6 +4,12 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.4.10] - Juillet 2026
+
+### Corrige
+
+- Le bandeau d'annonces reprend son defilement apres fermeture d'une popup de message, notamment sur mobile.
+
 ## [1.4.9] - Juillet 2026
 
 ### Modifie

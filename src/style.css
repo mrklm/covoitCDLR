@@ -407,8 +407,10 @@ h2 {
   white-space: nowrap;
 }
 
-.message-banner:hover .message-track {
-  animation-play-state: paused;
+@media (hover: hover) and (pointer: fine) {
+  .message-banner:hover .message-track {
+    animation-play-state: paused;
+  }
 }
 
 .message-ticker-item {
