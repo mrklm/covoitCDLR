@@ -1195,6 +1195,20 @@ function getMessageItemValue(participantId: string, mode: JourneyMode): string {
   return `${participantId}::${mode}`;
 }
 
+function formatShortDate(dateValue: string): string {
+  if (!dateValue) {
+    return '';
+  }
+
+  const [, month, day] = dateValue.split('-');
+
+  if (!day || !month) {
+    return '';
+  }
+
+  return `${day}/${month}`;
+}
+
 function renderMessageBanner(items: Participant[]): void {
   const banner = document.querySelector<HTMLElement>('#message-banner');
   const track = document.querySelector<HTMLElement>('#message-track');
@@ -1216,13 +1230,8 @@ function renderMessageBanner(items: Participant[]): void {
 
   track.innerHTML = messages
     .map(({ participant, journey, mode }) => {
-      const modeLabel = mode === 'outbound' ? 'Aller' : 'Retour';
-      const statusLabel =
-        journey.status === 'offer'
-          ? 'propose un covoit'
-          : journey.status === 'search'
-            ? 'cherche un covoit'
-            : 'message covoit';
+      const shortDate = formatShortDate(journey.date);
+      const dateLabel = shortDate ? ` ${shortDate}` : '';
 
       return `
         <button
@@ -1232,7 +1241,7 @@ function renderMessageBanner(items: Participant[]): void {
           data-message-mode="${mode}"
         >
           <strong>${escapeHtml(participant.firstName)} ${escapeHtml(participant.lastName)}</strong>
-          <span>${modeLabel} - ${statusLabel} : ${escapeHtml(journey.message)}</span>
+          <span>${escapeHtml(dateLabel)} ${escapeHtml(journey.message)}</span>
         </button>
       `;
     })

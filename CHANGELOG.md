@@ -4,6 +4,12 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.4.11] - Juillet 2026
+
+### Modifie
+
+- Presentation des annonces defilantes au format `Prenom Nom jour/mois message`.
+
 ## [1.4.10] - Juillet 2026
 
 ### Corrige
