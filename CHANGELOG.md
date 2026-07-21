@@ -4,6 +4,12 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.4.9] - Juillet 2026
+
+### Modifie
+
+- Simplification et reformulation du texte d'aide et de la section `Pour les geeks`.
+
 ## [1.4.8] - Juillet 2026
 
 ### Corrige
