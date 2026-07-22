@@ -4,6 +4,12 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.5.7] - Juillet 2026
+
+### Ajoute
+
+- Recopie du bouton `Ajouter participant-e-s` en haut de la liste des participant-e-s.
+
 ## [1.5.6] - Juillet 2026
 
 ### Ajoute

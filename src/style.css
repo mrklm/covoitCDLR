@@ -603,6 +603,11 @@ input {
   padding-bottom: 0;
 }
 
+.participant-list li.add-participant-list-item--top {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .add-participant-list-button {
   width: 100%;
   min-height: 40px;

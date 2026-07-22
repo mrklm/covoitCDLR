@@ -1259,13 +1259,15 @@ function renderParticipantList(items: Participant[]): void {
 
   if (items.length === 0) {
     list.innerHTML = `
+      ${renderAddParticipantListItem('top')}
       <li class="empty-list">Aucun participant à afficher.</li>
-      ${renderAddParticipantListItem()}
+      ${renderAddParticipantListItem('bottom')}
     `;
     return;
   }
 
   list.innerHTML =
+    renderAddParticipantListItem('top') +
     items
       .map((participant) => {
       const isSelected = participant.id === selectedParticipantId;
@@ -1308,12 +1310,12 @@ function renderParticipantList(items: Participant[]): void {
         </li>
       `;
       })
-      .join('') + renderAddParticipantListItem();
+      .join('') + renderAddParticipantListItem('bottom');
 }
 
-function renderAddParticipantListItem(): string {
+function renderAddParticipantListItem(position: 'top' | 'bottom'): string {
   return `
-    <li class="add-participant-list-item">
+    <li class="add-participant-list-item add-participant-list-item--${position}">
       <button class="add-participant-list-button" type="button">
         Ajouter participant-e-s
       </button>
