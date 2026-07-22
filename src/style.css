@@ -652,6 +652,18 @@ input {
   min-width: 0;
 }
 
+.participant-title-block {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.participant-pseudo {
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .participant-color {
   width: 12px;
   height: 12px;
@@ -719,7 +731,8 @@ input {
 }
 
 .edit-journey-button,
-.message-button {
+.message-button,
+.participant-settings-button {
   min-height: 34px;
   padding: 0 10px;
   border: 1px solid var(--border);
@@ -732,8 +745,26 @@ input {
   cursor: pointer;
 }
 
+.participant-settings-button {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  padding: 0;
+}
+
+.participant-settings-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
 .edit-journey-button:hover,
 .message-button:hover,
+.participant-settings-button:hover,
 .participant-button:hover strong {
   color: var(--accent-alt);
 }
@@ -1407,7 +1438,7 @@ button:disabled {
   }
 
   .participant-actions {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr auto;
   }
 
   .app-layout {

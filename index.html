@@ -51,7 +51,7 @@
           alt="Logo Chalon dans la rue"
         />
         <div class="header-title">
-          <h1>covoitCDLR <span class="app-version">v1.5.8</span></h1>
+          <h1>covoitCDLR <span class="app-version">v1.6.0</span></h1>
           <p>Festival Chalon dans la rue</p>
         </div>
       </div>
@@ -274,6 +274,10 @@
             un covoit ou si vous cherchez une place.
           </p>
           <p>
+            La roue crantée sur une fiche permet de modifier le pseudo, le
+            prénom, le nom, la ville et le numéro de téléphone.
+          </p>
+          <p>
             Les trajets proposés sont affichés sur la carte avec une ligne
             colorée.
           </p>
@@ -317,6 +321,11 @@
               Supabase via une fonction RPC protégée par mot de passe. Les
               trajets, messages et villes ajoutées sont stockés dans Supabase
               puis synchronisés en temps réel entre les appareils.
+            </p>
+            <p>
+              Les modifications de fiches participant-e-s passent aussi par une
+              fonction RPC Supabase protégée, avec une colonne optionnelle pour
+              le pseudo.
             </p>
             <p>
               Le navigateur conserve aussi une copie locale pour garder une
@@ -409,7 +418,7 @@
           </button>
 
           <div class="credits">
-            <p>covoitCDLR v1.5.8 - Développé par Klm - contact : clementmorel@free.fr</p>
+            <p>covoitCDLR v1.6.0 - Développé par Klm - contact : clementmorel@free.fr</p>
             <p>
               <a href="https://github.com/mrklm/covoitCDLR" target="_blank" rel="noreferrer">
                 Repo GitHub covoitCDLR
@@ -542,6 +551,15 @@
         </header>
         <form id="participant-form" class="participant-form">
           <label>
+            Pseudo
+            <input
+              id="participant-pseudo"
+              name="pseudo"
+              type="text"
+              autocomplete="nickname"
+            />
+          </label>
+          <label>
             Prénom
             <input
               id="participant-first-name"
@@ -577,8 +595,8 @@
           </label>
           <p id="participant-form-notice" class="source-notice" hidden></p>
           <div class="message-form-footer">
-            <span>La fiche sera ajoutée à la liste partagée.</span>
-            <button type="submit">Ajouter</button>
+            <span id="participant-form-status">La fiche sera ajoutée à la liste partagée.</span>
+            <button id="participant-submit-button" type="submit">Ajouter</button>
           </div>
         </form>
       </section>

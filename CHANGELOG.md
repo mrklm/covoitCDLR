@@ -4,6 +4,15 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.6.0] - Juillet 2026
+
+### Ajoute
+
+- Bouton parametres sur chaque fiche participant-e.
+- Popup de modification des informations participant-e : pseudo, prenom, nom, ville et telephone.
+- Affichage du pseudo au-dessus du nom quand il est renseigne.
+- Colonne Supabase `pseudo` pour partager cette information entre utilisateurs.
+
 ## [1.5.8] - Juillet 2026
 
 ### Modifie

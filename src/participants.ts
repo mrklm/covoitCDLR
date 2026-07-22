@@ -2,6 +2,7 @@ export type Participant = {
   id: string;
   firstName: string;
   lastName: string;
+  pseudo?: string;
   city: string;
   latitude: number | null;
   longitude: number | null;

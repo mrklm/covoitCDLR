@@ -67,6 +67,7 @@ type TechnicianRow = {
   id: string;
   last_name: string;
   first_name: string;
+  pseudo?: string | null;
   city: string;
   latitude: number | null;
   longitude: number | null;
@@ -99,6 +100,9 @@ type PendingCityTarget =
     }
   | {
       type: 'new-participant';
+    }
+  | {
+      type: 'edit-participant';
     }
   | null;
 
@@ -763,6 +767,20 @@ function formatParticipantName(participant: Participant): string {
   return `${formatNamePart(participant.firstName)} ${formatNamePart(participant.lastName)}`;
 }
 
+function renderParticipantDisplayName(participant: Participant): string {
+  const pseudo = participant.pseudo?.trim();
+  const name = escapeHtml(formatParticipantName(participant));
+
+  if (!pseudo) {
+    return `<strong>${name}</strong>`;
+  }
+
+  return `
+    <span class="participant-pseudo">${escapeHtml(pseudo)}</span>
+    <strong>${name}</strong>
+  `;
+}
+
 function getParticipantIdentityKey(participant: Participant): string {
   const phoneKey = participant.phone.replace(/\D/g, '');
 
@@ -859,6 +877,7 @@ function mapTechnicianToParticipant(
     id: technician.id,
     firstName: formatNamePart(technician.first_name),
     lastName: formatNamePart(technician.last_name),
+    pseudo: technician.pseudo?.trim() || undefined,
     city: technician.city,
     latitude,
     longitude,
@@ -919,6 +938,7 @@ async function saveParticipantToSupabase(
     technician_id: participant.id,
     last_name_value: participant.lastName,
     first_name_value: participant.firstName,
+    pseudo_value: participant.pseudo ?? '',
     city_value: participant.city,
     latitude_value: participant.latitude,
     longitude_value: participant.longitude,
@@ -974,7 +994,12 @@ async function loadParticipants(accessPassword: string | null): Promise<Particip
 }
 
 function formatParticipantPopup(participant: Participant): string {
+  const pseudo = participant.pseudo?.trim()
+    ? `<span>${escapeHtml(participant.pseudo.trim())}</span>`
+    : '';
+
   return `
+    ${pseudo}
     <strong>${escapeHtml(formatParticipantName(participant))}</strong>
     <span>Ville : ${escapeHtml(participant.city)}</span>
     <span>Téléphone : ${escapeHtml(participant.phone)}</span>
@@ -1236,7 +1261,7 @@ function getStatusIcon(status: JourneyStatus): string {
     `;
   }
 
-  return '<span class="status-icon status-icon--unset" aria-label="Statut non renseigné" title="Statut non renseigné">?</span>';
+  return '';
 }
 
 function renderParticipantList(items: Participant[]): void {
@@ -1289,7 +1314,9 @@ function renderParticipantList(items: Participant[]): void {
             <button class="participant-button" type="button" data-participant-id="${participant.id}">
               <span class="participant-name">
                 <span class="participant-color" style="--participant-color: ${participant.color}"></span>
-                <strong>${escapeHtml(formatParticipantName(participant))}</strong>
+                <span class="participant-title-block">
+                  ${renderParticipantDisplayName(participant)}
+                </span>
                 ${getStatusIcon(journey.status)}
               </span>
               <span>
@@ -1303,6 +1330,18 @@ function renderParticipantList(items: Participant[]): void {
               </button>
               <button class="message-button" type="button" data-participant-id="${participant.id}">
                 Message
+              </button>
+              <button
+                class="participant-settings-button"
+                type="button"
+                data-participant-id="${participant.id}"
+                aria-label="Modifier la fiche de ${escapeHtml(formatParticipantName(participant))}"
+                title="Modifier la fiche"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12.2 2h-.4a2 2 0 0 0-2 1.7l-.1.7a8 8 0 0 0-1.5.6l-.6-.4a2 2 0 0 0-2.6.2l-.3.3a2 2 0 0 0-.2 2.6l.4.6a8 8 0 0 0-.6 1.5l-.7.1a2 2 0 0 0-1.7 2v.4a2 2 0 0 0 1.7 2l.7.1a8 8 0 0 0 .6 1.5l-.4.6a2 2 0 0 0 .2 2.6l.3.3a2 2 0 0 0 2.6.2l.6-.4a8 8 0 0 0 1.5.6l.1.7a2 2 0 0 0 2 1.7h.4a2 2 0 0 0 2-1.7l.1-.7a8 8 0 0 0 1.5-.6l.6.4a2 2 0 0 0 2.6-.2l.3-.3a2 2 0 0 0 .2-2.6l-.4-.6a8 8 0 0 0 .6-1.5l.7-.1a2 2 0 0 0 1.7-2v-.4a2 2 0 0 0-1.7-2l-.7-.1a8 8 0 0 0-.6-1.5l.4-.6a2 2 0 0 0-.2-2.6l-.3-.3a2 2 0 0 0-2.6-.2l-.6.4a8 8 0 0 0-1.5-.6l-.1-.7a2 2 0 0 0-2-1.7z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
               </button>
             </div>
           </div>
@@ -1800,32 +1839,101 @@ function closeParticipantModal(): void {
 
   modal.hidden = true;
   form?.reset();
+  if (form) {
+    delete form.dataset.mode;
+    delete form.dataset.participantId;
+  }
   setParticipantFormNotice('');
   syncModalOpenState();
 }
 
 function openParticipantModal(): void {
   const modal = document.querySelector<HTMLElement>('#participant-modal');
+  const title = document.querySelector<HTMLElement>('#participant-modal-title');
+  const form = document.querySelector<HTMLFormElement>('#participant-form');
   const citySelect =
     document.querySelector<HTMLSelectElement>('#participant-city');
+  const pseudoInput = document.querySelector<HTMLInputElement>('#participant-pseudo');
   const firstNameInput =
     document.querySelector<HTMLInputElement>('#participant-first-name');
+  const lastNameInput = document.querySelector<HTMLInputElement>('#participant-last-name');
+  const phoneInput = document.querySelector<HTMLInputElement>('#participant-phone');
+  const status = document.querySelector<HTMLElement>('#participant-form-status');
+  const submitButton =
+    document.querySelector<HTMLButtonElement>('#participant-submit-button');
 
-  if (!modal || !citySelect) {
+  if (!modal || !form || !citySelect) {
     return;
   }
 
+  form.dataset.mode = 'add';
+  delete form.dataset.participantId;
+  title?.replaceChildren(document.createTextNode('Ajouter participant-e-s'));
+  pseudoInput && (pseudoInput.value = '');
+  firstNameInput && (firstNameInput.value = '');
+  lastNameInput && (lastNameInput.value = '');
+  phoneInput && (phoneInput.value = '');
   citySelect.innerHTML = buildParticipantCityOptions('');
   citySelect.value = '';
+  status?.replaceChildren(
+    document.createTextNode('La fiche sera ajoutée à la liste partagée.'),
+  );
+  submitButton?.replaceChildren(document.createTextNode('Ajouter'));
   setParticipantFormNotice('');
   modal.hidden = false;
   document.body.classList.add('modal-open');
   firstNameInput?.focus();
 }
 
-async function addParticipantFromForm(form: HTMLFormElement): Promise<void> {
+function openParticipantSettingsModal(participantId: string): void {
+  const participant = getParticipantById(participantId);
+  const modal = document.querySelector<HTMLElement>('#participant-modal');
+  const title = document.querySelector<HTMLElement>('#participant-modal-title');
+  const form = document.querySelector<HTMLFormElement>('#participant-form');
+  const citySelect =
+    document.querySelector<HTMLSelectElement>('#participant-city');
+  const pseudoInput = document.querySelector<HTMLInputElement>('#participant-pseudo');
+  const firstNameInput =
+    document.querySelector<HTMLInputElement>('#participant-first-name');
+  const lastNameInput = document.querySelector<HTMLInputElement>('#participant-last-name');
+  const phoneInput = document.querySelector<HTMLInputElement>('#participant-phone');
+  const status = document.querySelector<HTMLElement>('#participant-form-status');
+  const submitButton =
+    document.querySelector<HTMLButtonElement>('#participant-submit-button');
+
+  if (!participant || !modal || !form || !citySelect) {
+    return;
+  }
+
+  form.dataset.mode = 'edit';
+  form.dataset.participantId = participant.id;
+  title?.replaceChildren(document.createTextNode('Modifier participant-e'));
+  pseudoInput && (pseudoInput.value = participant.pseudo ?? '');
+  firstNameInput && (firstNameInput.value = participant.firstName);
+  lastNameInput && (lastNameInput.value = participant.lastName);
+  phoneInput && (phoneInput.value = participant.phone);
+  citySelect.innerHTML = buildParticipantCityOptions(participant.city);
+  citySelect.value = participant.city;
+  status?.replaceChildren(
+    document.createTextNode('La fiche sera mise à jour pour tout le monde.'),
+  );
+  submitButton?.replaceChildren(document.createTextNode('Enregistrer'));
+  setParticipantFormNotice('');
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+  pseudoInput?.focus();
+}
+
+async function saveParticipantFromForm(form: HTMLFormElement): Promise<void> {
   const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
   const formData = new FormData(form);
+  const mode = form.dataset.mode === 'edit' ? 'edit' : 'add';
+  const participantId = form.dataset.participantId;
+  const editedParticipant =
+    mode === 'edit' && participantId
+      ? getParticipantById(participantId)
+      : undefined;
+  const pseudo = String(formData.get('pseudo') ?? '').trim();
   const firstName = String(formData.get('first-name') ?? '').trim();
   const lastName = String(formData.get('last-name') ?? '').trim();
   const cityName = String(formData.get('city') ?? '').trim();
@@ -1845,21 +1953,24 @@ async function addParticipantFromForm(form: HTMLFormElement): Promise<void> {
   }
 
   const participant: Participant = {
-    id: createParticipantId(firstName, lastName),
+    id: editedParticipant?.id ?? createParticipantId(firstName, lastName),
+    pseudo: pseudo || undefined,
     firstName: formatNamePart(firstName),
     lastName: formatNamePart(lastName),
     city: city.name,
     latitude: city.latitude,
     longitude: city.longitude,
     phone,
-    color: getNextParticipantColor(),
+    color: editedParticipant?.color ?? getNextParticipantColor(),
   };
-  const existingParticipant = appParticipants.find(
-    (item) => getParticipantIdentityKey(item) === getParticipantIdentityKey(participant),
+  const duplicateParticipant = appParticipants.find(
+    (item) =>
+      item.id !== participant.id &&
+      getParticipantIdentityKey(item) === getParticipantIdentityKey(participant),
   );
 
-  if (existingParticipant) {
-    selectedParticipantId = existingParticipant.id;
+  if (duplicateParticipant) {
+    selectedParticipantId = duplicateParticipant.id;
     renderParticipantList(appParticipants);
     addParticipantMarkers(appParticipants);
     setParticipantFormNotice('Cette fiche existe déjà dans la liste.');
@@ -1867,11 +1978,14 @@ async function addParticipantFromForm(form: HTMLFormElement): Promise<void> {
   }
 
   submitButton?.setAttribute('disabled', 'true');
-  setParticipantFormNotice('Ajout en cours...');
+  setParticipantFormNotice(mode === 'edit' ? 'Mise à jour en cours...' : 'Ajout en cours...');
 
   const isShared = await saveParticipantToSupabase(participant);
 
-  appParticipants = sortParticipants([...appParticipants, participant]);
+  appParticipants = sortParticipants([
+    ...appParticipants.filter((item) => item.id !== participant.id),
+    participant,
+  ]);
   selectedParticipantId = participant.id;
   editingParticipantId = null;
   addParticipantMarkers(appParticipants);
@@ -1882,7 +1996,9 @@ async function addParticipantFromForm(form: HTMLFormElement): Promise<void> {
 
   if (!isShared) {
     setParticipantFormNotice(
-      "Participant-e ajouté-e sur cet appareil, mais pas partagé-e. Réexécute le fichier supabase/technicians.sql dans Supabase.",
+      mode === 'edit'
+        ? "Fiche modifiée sur cet appareil, mais pas partagée. Réexécute le fichier supabase/technicians.sql dans Supabase."
+        : "Participant-e ajouté-e sur cet appareil, mais pas partagé-e. Réexécute le fichier supabase/technicians.sql dans Supabase.",
     );
     return;
   }
@@ -1942,13 +2058,18 @@ function openCityModalForNewParticipant(): void {
   const modal = document.querySelector<HTMLElement>('#city-modal');
   const cityNameInput = document.querySelector<HTMLInputElement>('#city-name');
   const result = document.querySelector<HTMLElement>('#city-search-result');
+  const participantForm =
+    document.querySelector<HTMLFormElement>('#participant-form');
 
   if (!modal || !cityNameInput) {
     return;
   }
 
   pendingCityTarget = {
-    type: 'new-participant',
+    type:
+      participantForm?.dataset.mode === 'edit'
+        ? 'edit-participant'
+        : 'new-participant',
   };
 
   result?.replaceChildren();
@@ -2057,7 +2178,10 @@ function setPendingTargetCity(cityName: string): void {
     return;
   }
 
-  if (pendingCityTarget.type === 'new-participant') {
+  if (
+    pendingCityTarget.type === 'new-participant' ||
+    pendingCityTarget.type === 'edit-participant'
+  ) {
     const citySelect =
       document.querySelector<HTMLSelectElement>('#participant-city');
 
@@ -2162,6 +2286,16 @@ function bindControls(): void {
 
     if (addParticipantButton) {
       openParticipantModal();
+      return;
+    }
+
+    const settingsButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      '.participant-settings-button',
+    );
+
+    if (settingsButton?.dataset.participantId) {
+      selectedParticipantId = settingsButton.dataset.participantId;
+      openParticipantSettingsModal(settingsButton.dataset.participantId);
       return;
     }
 
@@ -2288,7 +2422,7 @@ function bindControls(): void {
 
   participantForm?.addEventListener('submit', (event) => {
     event.preventDefault();
-    void addParticipantFromForm(participantForm);
+    void saveParticipantFromForm(participantForm);
   });
 
   document

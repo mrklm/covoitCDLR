@@ -16,9 +16,11 @@ covoitCDLR affiche une carte interactive permettant de visualiser les participan
 
 Cette carte aide l'equipe technique du festival Chalon dans la rue a organiser les covoiturages.
 
-Chaque personne apparait dans la liste des participants. Les pastilles sur la carte indiquent les villes de depart ou d'arrivee connues. En cliquant sur une pastille, vous voyez la fiche de la personne : nom, prenom, ville et telephone.
+Chaque personne apparait dans la liste des participants. Si un pseudo est renseigne, il apparait au-dessus du prenom et du nom. Les pastilles sur la carte indiquent les villes de depart ou d'arrivee connues. En cliquant sur une pastille, vous voyez la fiche de la personne : pseudo si disponible, nom, prenom, ville et telephone.
 
 Pour renseigner un trajet, choisissez une personne dans la liste puis cliquez sur `Renseigner`.
+
+Le bouton parametres de chaque fiche permet de modifier le pseudo, le prenom, le nom, la ville et le numero de telephone.
 
 Vous pouvez indiquer si la personne propose un covoit ou cherche une place. Si elle cherche une place, aucun itineraire n'est dessine sur la carte. Si elle propose un covoit, vous pouvez renseigner la date et les villes-etapes.
 
@@ -48,6 +50,8 @@ Les informations sont partagees avec les autres utilisateurs grace a Supabase. A
 - Marqueur du festival a Chalon-sur-Saone.
 - Pastilles participants avec initiales.
 - Popup participant avec nom, prenom, ville et telephone.
+- Pseudo optionnel affiche au-dessus du nom.
+- Modification des fiches participant-e-s depuis un bouton parametres.
 - Decalage visuel des pastilles quand plusieurs participants partagent une meme ville.
 - Gestion separee des trajets aller et retour.
 - Statuts : non renseigne, propose un covoit, cherche un covoit.
@@ -270,6 +274,8 @@ participant_id + journey_mode
 ```
 
 Chaque ligne contient le statut, la date, la ville de depart ou d'arrivee modifiable, les etapes, le message et la date de mise a jour. Quand un trajet passe en `Propose un covoit`, l'application genere un message par defaut si aucun message personnalise n'existe deja.
+
+Les donnees relatives aux participant-e-s sont stockees dans `public.technicians`, dont le champ `pseudo` est optionnel et partage via la fonction RPC `public.upsert_technician`.
 
 Les villes ajoutees depuis l'interface sont stockees dans `public.custom_cities`. Elles completent la liste integree dans `cityOptions`.
 

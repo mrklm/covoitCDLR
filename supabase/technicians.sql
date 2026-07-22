@@ -4,6 +4,7 @@ create table if not exists public.technicians (
   id text primary key,
   last_name text not null,
   first_name text not null,
+  pseudo text not null default '',
   city text not null,
   latitude double precision,
   longitude double precision,
@@ -13,6 +14,9 @@ create table if not exists public.technicians (
   updated_at timestamptz not null default now()
 );
 
+alter table public.technicians
+  add column if not exists pseudo text not null default '';
+
 alter table public.technicians enable row level security;
 
 drop policy if exists "No public read technicians" on public.technicians;
@@ -20,11 +24,37 @@ drop policy if exists "No public insert technicians" on public.technicians;
 drop policy if exists "No public update technicians" on public.technicians;
 drop policy if exists "No public delete technicians" on public.technicians;
 
+drop function if exists public.get_technicians(text);
+drop function if exists public.upsert_technician(
+  text,
+  text,
+  text,
+  text,
+  text,
+  double precision,
+  double precision,
+  text,
+  text
+);
+drop function if exists public.upsert_technician(
+  text,
+  text,
+  text,
+  text,
+  text,
+  text,
+  double precision,
+  double precision,
+  text,
+  text
+);
+
 create or replace function public.get_technicians(access_password text)
 returns table (
   id text,
   last_name text,
   first_name text,
+  pseudo text,
   city text,
   latitude double precision,
   longitude double precision,
@@ -45,6 +75,7 @@ begin
     t.id,
     t.last_name,
     t.first_name,
+    t.pseudo,
     t.city,
     t.latitude,
     t.longitude,
@@ -65,6 +96,7 @@ create or replace function public.upsert_technician(
   technician_id text,
   last_name_value text,
   first_name_value text,
+  pseudo_value text,
   city_value text,
   latitude_value double precision,
   longitude_value double precision,
@@ -75,6 +107,7 @@ returns table (
   id text,
   last_name text,
   first_name text,
+  pseudo text,
   city text,
   latitude double precision,
   longitude double precision,
@@ -95,11 +128,19 @@ begin
   select t.id
   into resolved_technician_id
   from public.technicians t
-  where lower(trim(t.last_name)) = lower(trim(last_name_value))
-    and lower(trim(t.first_name)) = lower(trim(first_name_value))
-    and regexp_replace(t.phone, '\D', '', 'g') = regexp_replace(phone_value, '\D', '', 'g')
-  order by t.created_at
+  where t.id = technician_id
   limit 1;
+
+  if resolved_technician_id is null then
+    select t.id
+    into resolved_technician_id
+    from public.technicians t
+    where lower(trim(t.last_name)) = lower(trim(last_name_value))
+      and lower(trim(t.first_name)) = lower(trim(first_name_value))
+      and regexp_replace(t.phone, '\D', '', 'g') = regexp_replace(phone_value, '\D', '', 'g')
+    order by t.created_at
+    limit 1;
+  end if;
 
   resolved_technician_id = coalesce(resolved_technician_id, technician_id);
 
@@ -107,6 +148,7 @@ begin
     id,
     last_name,
     first_name,
+    pseudo,
     city,
     latitude,
     longitude,
@@ -117,6 +159,7 @@ begin
     resolved_technician_id,
     trim(last_name_value),
     trim(first_name_value),
+    trim(pseudo_value),
     trim(city_value),
     latitude_value,
     longitude_value,
@@ -126,6 +169,7 @@ begin
   on conflict on constraint technicians_pkey do update set
     last_name = excluded.last_name,
     first_name = excluded.first_name,
+    pseudo = excluded.pseudo,
     city = excluded.city,
     latitude = excluded.latitude,
     longitude = excluded.longitude,
@@ -138,6 +182,7 @@ begin
     t.id,
     t.last_name,
     t.first_name,
+    t.pseudo,
     t.city,
     t.latitude,
     t.longitude,
@@ -149,6 +194,7 @@ end;
 $$;
 
 grant execute on function public.upsert_technician(
+  text,
   text,
   text,
   text,
