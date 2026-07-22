@@ -51,7 +51,7 @@
           alt="Logo Chalon dans la rue"
         />
         <div class="header-title">
-          <h1>covoitCDLR <span class="app-version">v1.5.5</span></h1>
+          <h1>covoitCDLR <span class="app-version">v1.5.6</span></h1>
           <p>Festival Chalon dans la rue</p>
         </div>
       </div>
@@ -282,6 +282,11 @@
             carte. Les messages actifs défilent dans le bandeau sous l'en-tête.
           </p>
           <p>
+            Quand vous proposez un covoit, une annonce est créée automatiquement
+            dans le bandeau. Le bouton Message permet ensuite de modifier cette
+            phrase par défaut.
+          </p>
+          <p>
             Le sélecteur au-dessus de la carte permet d'afficher les allers ou
             les retours.
           </p>
@@ -324,6 +329,11 @@
               jour. Les lignes de trajet utilisent les coordonnées GPS des
               villes sélectionnées, et les villes manquantes peuvent être
               ajoutées via l'API publique geo.api.gouv.fr.
+            </p>
+            <p>
+              Les annonces automatiques sont générées côté client à partir du
+              participant, du sens du trajet, de la destination et de la date.
+              Elles sont ensuite sauvegardées comme les messages personnalisés.
             </p>
             <a
               class="improvement-button"
@@ -399,7 +409,7 @@
           </button>
 
           <div class="credits">
-            <p>covoitCDLR v1.5.5 - appli TypeScript - Juillet 2026</p>
+            <p>covoitCDLR v1.5.6 - appli TypeScript - Juillet 2026</p>
             <p>Développé par Klm - contact : clementmorel@free.fr</p>
             <p>
               <a href="https://github.com/mrklm/covoitCDLR" target="_blank" rel="noreferrer">

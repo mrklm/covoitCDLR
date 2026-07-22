@@ -49,6 +49,10 @@ type ParticipantJourneys = {
 
 type SavedJourneys = Record<string, ParticipantJourneys>;
 
+type SetJourneyOptions = {
+  autoMessage?: boolean;
+};
+
 type JourneyRow = {
   participant_id: string;
   journey_mode: JourneyMode;
@@ -486,21 +490,89 @@ function getParticipantJourneys(participantId: string): ParticipantJourneys {
   };
 }
 
+function applyAutomaticJourneyMessage(
+  participantId: string,
+  mode: JourneyMode,
+  journey: Journey,
+): Journey {
+  const participant = getParticipantById(participantId);
+  const previousJourney = getParticipantJourneys(participantId)[mode];
+
+  if (!participant || journey.status !== 'offer') {
+    return journey;
+  }
+
+  const previousMessage = previousJourney.message.trim();
+  const canReplaceMessage =
+    !previousMessage || isDefaultJourneyMessage(participant, previousMessage);
+
+  if (!canReplaceMessage) {
+    return journey;
+  }
+
+  return {
+    ...journey,
+    message: buildDefaultJourneyMessage(participant, journey, mode),
+  };
+}
+
 function setParticipantJourney(
   participantId: string,
   mode: JourneyMode,
   journey: Journey,
+  options: SetJourneyOptions = {},
 ): Promise<boolean> {
+  const nextJourney =
+    options.autoMessage === false
+      ? journey
+      : applyAutomaticJourneyMessage(participantId, mode, journey);
+
   savedJourneys = {
     ...savedJourneys,
     [participantId]: {
       ...getParticipantJourneys(participantId),
-      [mode]: journey,
+      [mode]: nextJourney,
     },
   };
 
   saveJourneys();
-  return saveJourneyToSupabase(participantId, mode, journey);
+  return saveJourneyToSupabase(participantId, mode, nextJourney);
+}
+
+async function ensureAutomaticMessagesForOffers(): Promise<void> {
+  const updates: Array<Promise<boolean>> = [];
+  let hasChanges = false;
+
+  appParticipants.forEach((participant) => {
+    (['outbound', 'return'] as JourneyMode[]).forEach((mode) => {
+      const journey = getParticipantJourneys(participant.id)[mode];
+      const nextJourney = applyAutomaticJourneyMessage(
+        participant.id,
+        mode,
+        journey,
+      );
+
+      if (nextJourney.message === journey.message) {
+        return;
+      }
+
+      savedJourneys = {
+        ...savedJourneys,
+        [participant.id]: {
+          ...getParticipantJourneys(participant.id),
+          [mode]: nextJourney,
+        },
+      };
+      hasChanges = true;
+      updates.push(saveJourneyToSupabase(participant.id, mode, nextJourney));
+    });
+  });
+
+  if (hasChanges) {
+    saveJourneys();
+  }
+
+  await Promise.allSettled(updates);
 }
 
 function normalizeCustomCity(city: CityOption): CityOption {
@@ -699,6 +771,36 @@ function getParticipantIdentityKey(participant: Participant): string {
     getCityKey(participant.lastName),
     phoneKey,
   ].join('|');
+}
+
+function getJourneyDestination(
+  participant: Participant,
+  journey: Journey,
+  mode: JourneyMode,
+): string {
+  return mode === 'outbound'
+    ? festivalLocation.name
+    : journey.endpointCity || participant.city;
+}
+
+function formatMessageDate(dateValue: string): string {
+  return formatShortDate(dateValue) || 'date à préciser';
+}
+
+function buildDefaultJourneyMessage(
+  participant: Participant,
+  journey: Journey,
+  mode: JourneyMode,
+): string {
+  const destination = getJourneyDestination(participant, journey, mode);
+
+  return `${formatParticipantName(participant)} propose un trajet vers ${destination} le ${formatMessageDate(journey.date)}`;
+}
+
+function isDefaultJourneyMessage(participant: Participant, message: string): boolean {
+  return message
+    .trim()
+    .startsWith(`${formatParticipantName(participant)} propose un trajet vers `);
 }
 
 function getTodayValue(): string {
@@ -1392,6 +1494,20 @@ function renderMessageBanner(items: Participant[]): void {
     .map(({ participant, journey, mode }) => {
       const shortDate = formatShortDate(journey.date);
       const dateLabel = shortDate ? ` ${shortDate}` : '';
+      const message = journey.message.trim();
+
+      if (isDefaultJourneyMessage(participant, message)) {
+        return `
+          <button
+            class="message-ticker-item"
+            type="button"
+            data-message-participant-id="${participant.id}"
+            data-message-mode="${mode}"
+          >
+            <span>${escapeHtml(message)}</span>
+          </button>
+        `;
+      }
 
       return `
         <button
@@ -1401,7 +1517,7 @@ function renderMessageBanner(items: Participant[]): void {
           data-message-mode="${mode}"
         >
           <strong>${escapeHtml(formatParticipantName(participant))}</strong>
-          <span>${escapeHtml(dateLabel)} ${escapeHtml(journey.message)}</span>
+          <span>${escapeHtml(dateLabel)} ${escapeHtml(message)}</span>
         </button>
       `;
     })
@@ -1531,7 +1647,11 @@ function openMessageModal(participantId: string): void {
       `Message - ${formatParticipantName(participant)}`,
     ),
   );
-  textarea.value = journey.message;
+  textarea.value =
+    journey.message ||
+    (journey.status === 'offer'
+      ? buildDefaultJourneyMessage(participant, journey, activeMode)
+      : '');
   updateMessageCounter(textarea);
   modal.hidden = false;
   document.body.classList.add('modal-open');
@@ -1550,7 +1670,7 @@ async function saveMessageFromModal(form: HTMLFormElement): Promise<void> {
   const isShared = await setParticipantJourney(participantId, activeMode, {
     ...journey,
     message: textarea.value.trim().slice(0, maxMessageLength),
-  });
+  }, { autoMessage: false });
 
   renderParticipantList(appParticipants);
   drawRoutes(appParticipants);
@@ -2518,6 +2638,7 @@ async function initializeApp(): Promise<void> {
   customCities = await loadCustomCities();
   selectedParticipantId = appParticipants[0]?.id ?? '';
   savedJourneys = await loadSavedJourneys();
+  await ensureAutomaticMessagesForOffers();
 
   addFestivalMarker();
   addParticipantMarkers(appParticipants);

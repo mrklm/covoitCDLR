@@ -4,6 +4,14 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.5.6] - Juillet 2026
+
+### Ajoute
+
+- Creation automatique d'un message d'annonce quand un-e participant-e propose un covoit.
+- Possibilite de modifier le message automatique depuis le bouton `Message`.
+- Mise a jour du README et de l'aide sur les annonces automatiques.
+
 ## [1.5.5] - Juillet 2026
 
 ### Corrige

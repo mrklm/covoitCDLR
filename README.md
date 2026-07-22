@@ -32,7 +32,7 @@ Pour le retour, la ville de depart est toujours Chalon-sur-Saone. La ville d'arr
 
 Les trajets proposes apparaissent sur la carte sous forme de lignes continues, avec une couleur differente par personne.
 
-Le bouton `Message` permet de publier une annonce courte, par exemple pour dire que l'on cherche une place ou que l'on propose un covoit. Les annonces actives defilent dans le bandeau sous l'en-tete. En cliquant sur une annonce, vous voyez le message complet et les coordonnees de la personne.
+Quand une personne propose un covoit, une annonce est creee automatiquement dans le bandeau avec le format `Prenom Nom propose un trajet vers Ville le jour/mois`. Le bouton `Message` permet de modifier cette phrase par defaut ou de publier une annonce courte, par exemple pour dire que l'on cherche une place. Les annonces actives defilent dans le bandeau sous l'en-tete. En cliquant sur une annonce, vous voyez le message complet et les coordonnees de la personne.
 
 Les trajets et annonces dont la date est passee sont masques automatiquement.
 
@@ -55,6 +55,7 @@ Les informations sont partagees avec les autres utilisateurs grace a Supabase. A
 - Ajout de villes depuis l'interface avec recherche GPS via `geo.api.gouv.fr`.
 - Lignes de trajet continues, colorees par participant.
 - Bandeau d'annonces defilant sur ordinateur et telephone.
+- Message automatique quand une personne propose un covoit.
 - Popup de detail pour consulter une annonce et les coordonnees de contact.
 - Masquage automatique des trajets et annonces passes.
 - Synchronisation des trajets avec Supabase.
@@ -266,7 +267,7 @@ Les trajets sont stockes dans `public.covoit_journeys`, avec une ligne par parti
 participant_id + journey_mode
 ```
 
-Chaque ligne contient le statut, la date, la ville de depart ou d'arrivee modifiable, les etapes, le message et la date de mise a jour.
+Chaque ligne contient le statut, la date, la ville de depart ou d'arrivee modifiable, les etapes, le message et la date de mise a jour. Quand un trajet passe en `Propose un covoit`, l'application genere un message par defaut si aucun message personnalise n'existe deja.
 
 Les villes ajoutees depuis l'interface sont stockees dans `public.custom_cities`. Elles completent la liste integree dans `cityOptions`.
 
