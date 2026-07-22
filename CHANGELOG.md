@@ -4,6 +4,13 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.5.8] - Juillet 2026
+
+### Modifie
+
+- Utilisation de logos optimises pour reduire le poids charge au demarrage.
+- Ajout de `logo-cdlr-192.png` pour les icones navigateur et `logo-cdlr-320.png` pour l'affichage dans l'application.
+
 ## [1.5.7] - Juillet 2026
 
 ### Ajoute

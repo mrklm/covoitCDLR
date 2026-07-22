@@ -1,6 +1,6 @@
 # covoitCDLR
 
-<img src="public/logo-cdlr.png" alt="Logo covoitCDLR" width="160" />
+<img src="public/logo-cdlr-320.png" alt="Logo covoitCDLR" width="160" />
 
 Application web de covoiturage pour l'equipe technique du festival Chalon dans la rue.
 
@@ -121,6 +121,8 @@ covoitCDLR/
 ├── vite.config.ts
 ├── public/
 │   ├── logo-cdlr.png
+│   ├── logo-cdlr-192.png
+│   ├── logo-cdlr-320.png
 │   └── program-icons/
 ├── src/
 │   ├── main.ts
@@ -294,7 +296,7 @@ base: '/covoitCDLR/'
 Les chemins d'assets publics dans `index.html` doivent donc utiliser `%BASE_URL%` lorsque necessaire, par exemple :
 
 ```html
-<img src="%BASE_URL%logo-cdlr.png" alt="Logo Chalon dans la rue" />
+<img src="%BASE_URL%logo-cdlr-320.png" alt="Logo Chalon dans la rue" />
 ```
 
 ## Points d'attention developpeur
