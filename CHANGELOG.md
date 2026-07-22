@@ -4,6 +4,13 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.5.5] - Juillet 2026
+
+### Corrige
+
+- Ajout d'un liseré et d'un renderer Leaflet dédié pour rendre les lignes d'itinéraires visibles sur ordinateur et mobile.
+- Redessin des itinéraires lors des changements de taille de carte.
+
 ## [1.5.4] - Juillet 2026
 
 ### Corrige

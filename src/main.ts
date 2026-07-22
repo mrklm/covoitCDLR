@@ -301,6 +301,7 @@ const festivalIcon = L.divIcon({
 
 const participantLayer = L.layerGroup().addTo(map);
 const routeLayer = L.layerGroup().addTo(map);
+const routeRenderer = L.svg({ padding: 0.8 });
 
 function createEmptyJourney(): Journey {
   return {
@@ -1277,13 +1278,25 @@ function drawRoutes(items: Participant[]): void {
 
     const defaultWeight = isMobileViewport() ? 6 : 4;
     const selectedWeight = isMobileViewport() ? 8 : 6;
+    const routeWeight = isSelected ? selectedWeight : defaultWeight;
+
+    L.polyline(routePoints, {
+      color: '#ffffff',
+      weight: routeWeight + 4,
+      opacity: 0.58,
+      interactive: false,
+      lineCap: 'round',
+      lineJoin: 'round',
+      renderer: routeRenderer,
+    }).addTo(routeLayer);
 
     L.polyline(routePoints, {
       color: participant.color,
-      weight: isSelected ? selectedWeight : defaultWeight,
+      weight: routeWeight,
       opacity: isSelected ? 0.95 : 0.82,
       lineCap: 'round',
       lineJoin: 'round',
+      renderer: routeRenderer,
     })
       .bindPopup(
         `<strong>${escapeHtml(formatParticipantName(participant))}</strong><span>${activeMode === 'outbound' ? 'Aller' : 'Retour'}</span>`,
@@ -2521,8 +2534,7 @@ void initializeApp();
 
 // Leaflet doit recalculer sa taille lorsque le navigateur modifie le viewport.
 window.addEventListener('resize', () => {
-  map.invalidateSize();
-  addParticipantMarkers(appParticipants);
+  refreshVisibleMapLayers();
   renderMessageBanner(appParticipants);
 });
 
