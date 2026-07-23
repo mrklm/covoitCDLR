@@ -16,11 +16,11 @@ covoitCDLR affiche une carte interactive permettant de visualiser les participan
 
 Cette carte aide l'equipe technique du festival Chalon dans la rue a organiser les covoiturages.
 
-Chaque personne apparait dans la liste des participants. Si un pseudo est renseigne, il apparait au-dessus du prenom et du nom. Les pastilles sur la carte indiquent les villes de depart ou d'arrivee connues. En cliquant sur une pastille, vous voyez la fiche de la personne : pseudo si disponible, nom, prenom, ville et telephone.
+Chaque personne apparait dans la liste des participants. Si un pseudo est renseigne, il apparait au-dessus du prenom et du nom. Dans les messages, l'identite est affichee sous la forme `"Pseudo" Prenom Nom`. Les pastilles sur la carte indiquent les villes de depart ou d'arrivee connues. En cliquant sur une pastille, vous voyez la fiche de la personne : pseudo si disponible, nom, prenom, ville et telephone.
 
 Pour renseigner un trajet, choisissez une personne dans la liste puis cliquez sur `Renseigner`.
 
-Le bouton parametres de chaque fiche permet de modifier le pseudo, le prenom, le nom, la ville et le numero de telephone.
+Le bouton parametres, represente par une roue crantee sur chaque fiche, permet de modifier le pseudo, le prenom, le nom, la ville et le numero de telephone. Ces modifications sont partagees avec les autres utilisateurs via Supabase.
 
 Vous pouvez indiquer si la personne propose un covoit ou cherche une place. Si elle cherche une place, aucun itineraire n'est dessine sur la carte. Si elle propose un covoit, vous pouvez renseigner la date et les villes-etapes.
 
@@ -34,7 +34,7 @@ Pour le retour, la ville de depart est toujours Chalon-sur-Saone. La ville d'arr
 
 Les trajets proposes apparaissent sur la carte sous forme de lignes continues, avec une couleur differente par personne.
 
-Quand une personne propose un covoit, une annonce est creee automatiquement dans le bandeau avec le format `Prenom Nom propose un trajet vers Ville le jour/mois`. Le bouton `Message` permet de modifier cette phrase par defaut ou de publier une annonce courte, par exemple pour dire que l'on cherche une place. Les annonces actives defilent dans le bandeau sous l'en-tete. En cliquant sur une annonce, vous voyez le message complet et les coordonnees de la personne.
+Quand une personne propose un covoit, une annonce est creee automatiquement dans le bandeau avec le format `"Pseudo" Prenom Nom propose un trajet vers Ville le jour/mois` si un pseudo existe, ou `Prenom Nom propose un trajet vers Ville le jour/mois` sinon. Le bouton `Message` permet de modifier cette phrase par defaut ou de publier une annonce courte, par exemple pour dire que l'on cherche une place. Les annonces actives defilent dans le bandeau sous l'en-tete. En cliquant sur une annonce, vous voyez le message complet et les coordonnees de la personne.
 
 Les trajets et annonces dont la date est passee sont masques automatiquement.
 
@@ -160,6 +160,7 @@ La table `public.technicians` contient :
 - `id`
 - `last_name`
 - `first_name`
+- `pseudo`
 - `city`
 - `latitude`
 - `longitude`
@@ -220,9 +221,9 @@ Ces villes completent la liste integree dans le code et sont partagees entre uti
 - rendu des marqueurs ;
 - rendu des lignes de trajet ;
 - rendu de la liste participants ;
-- gestion du formulaire ;
+- gestion des formulaires de trajet, message, ville et fiche participant-e ;
 - gestion des themes ;
-- gestion de la popup d'aide ;
+- gestion des popups d'aide, d'options et de detail ;
 - affichage mobile carte / participants.
 
 `src/participants.ts` contient une liste de demonstration utilisee seulement comme secours en developpement.
@@ -288,6 +289,62 @@ Les lignes de trajet sont dessinees avec Leaflet a partir des coordonnees GPS de
 Les trajets et annonces passes sont filtres cote client avec la date du jour. La carte bascule par defaut sur les retours a partir du 23 juillet 2026.
 
 Le bouton `Proposer une amelioration` de l'aide ouvre un mail vers `clementmorel@free.fr`.
+
+### Arborescence detaillee
+
+```text
+covoitCDLR/
+├── index.html
+├── package.json
+├── package-lock.json
+├── tsconfig.json
+├── vite.config.ts
+├── README.md
+├── CHANGELOG.md
+├── public/
+│   ├── logo-cdlr.png
+│   ├── logo-cdlr-192.png
+│   ├── logo-cdlr-320.png
+│   ├── docs/
+│   │   ├── CE_1.png
+│   │   └── CE_2.png
+│   └── program-icons/
+│       ├── edirep.png
+│       ├── garage.png
+│       ├── klmp3.png
+│       ├── popcornana.png
+│       ├── vaso-shop.png
+│       └── warpocalypse.png
+├── src/
+│   ├── main.ts
+│   ├── participants.ts
+│   ├── style.css
+│   ├── supabaseClient.ts
+│   ├── vite-env.d.ts
+│   └── assets/
+└── supabase/
+    ├── schema.sql
+    ├── technicians.sql
+    └── fix-get-technicians-function.sql
+```
+
+### Interactions entre fichiers
+
+`index.html` fournit la structure HTML statique : en-tete, carte, liste des participant-e-s, bandeau de messages, popups d'aide, d'options, de message, de ville et de fiche participant-e. Les elements portent des `id` et des attributs `data-*` que `src/main.ts` utilise pour brancher les interactions.
+
+`src/main.ts` est le coeur de l'application. Il initialise Leaflet, charge les participant-e-s depuis Supabase, lit et sauvegarde les trajets, genere les messages automatiques, dessine les pastilles et les lignes, gere les formulaires, applique les filtres de dates passees et synchronise l'affichage apres chaque modification.
+
+`src/style.css` definit les themes, les couleurs, la mise en page desktop/mobile, les popups, les pastilles, le bandeau defilant et le potentiometre de luminosite. Les themes modifient des variables CSS appliquees ensuite a toute l'interface.
+
+`src/supabaseClient.ts` centralise la creation du client Supabase a partir des variables d'environnement. `src/main.ts` l'importe pour lire et ecrire les donnees partagees.
+
+`src/participants.ts` contient uniquement des participant-e-s de demonstration. Cette liste sert de secours en developpement si Supabase n'est pas configure ou inaccessible.
+
+`supabase/technicians.sql` gere les donnees relatives aux participant-e-s : table `public.technicians`, colonne `pseudo`, securisation RLS, fonction `get_technicians` pour lire les fiches apres mot de passe et fonction `upsert_technician` pour ajouter ou modifier une fiche.
+
+`supabase/schema.sql` gere les donnees de covoiturage : table `public.covoit_journeys` pour les trajets et messages, table `public.custom_cities` pour les villes ajoutees depuis l'application, politiques RLS et publication Realtime.
+
+`vite.config.ts` configure Vite pour GitHub Pages avec la base `/covoitCDLR/`. `package.json` declare les scripts (`dev`, `build`, `preview`), les dependances et la version affichee dans l'application.
 
 ## Deploiement GitHub Pages
 

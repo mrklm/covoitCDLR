@@ -51,7 +51,7 @@
           alt="Logo Chalon dans la rue"
         />
         <div class="header-title">
-          <h1>covoitCDLR <span class="app-version">v1.6.1</span></h1>
+          <h1>covoitCDLR <span class="app-version">v1.6.2</span></h1>
           <p>Festival Chalon dans la rue</p>
         </div>
       </div>
@@ -270,12 +270,19 @@
             Chalon dans la rue à organiser des covoiturages.
           </p>
           <p>
-            Cliquez sur votre nom dans la liste, puis indiquez si vous proposez
-            un covoit ou si vous cherchez une place.
+            Dans la liste Participant-e-s, cliquez sur Renseigner pour indiquer
+            votre statut, vos dates et les villes-étapes de votre trajet.
           </p>
           <p>
-            La roue crantée sur une fiche permet de modifier le pseudo, le
-            prénom, le nom, la ville et le numéro de téléphone.
+            Le bouton Message permet de publier ou modifier une annonce courte.
+            Si vous proposez un covoit, une annonce est créée automatiquement et
+            peut ensuite être personnalisée.
+          </p>
+          <p>
+            La roue crantée ouvre les paramètres de votre fiche. Elle permet de
+            modifier le pseudo, le prénom, le nom, la ville et le numéro de
+            téléphone. Si un pseudo est renseigné, il apparaît au-dessus du nom
+            et dans les messages sous la forme "Pseudo" Prénom Nom.
           </p>
           <p>
             Les trajets proposés sont affichés sur la carte avec une ligne
@@ -343,6 +350,23 @@
               Les annonces automatiques sont générées côté client à partir du
               participant, du sens du trajet, de la destination et de la date.
               Elles sont ensuite sauvegardées comme les messages personnalisés.
+            </p>
+            <p>
+              Arborescence simplifiée : index.html contient la structure des
+              popups, boutons et panneaux ; src/main.ts pilote Leaflet,
+              Supabase, les formulaires, les messages, les trajets et les
+              interactions ; src/style.css gère les thèmes, le responsive et les
+              composants visuels ; src/participants.ts sert de jeu de
+              démonstration en développement ; src/supabaseClient.ts centralise
+              la connexion Supabase.
+            </p>
+            <p>
+              Côté base, supabase/technicians.sql crée la table des
+              participant-e-s et les fonctions RPC protégées par mot de passe.
+              supabase/schema.sql crée les trajets, messages et villes ajoutées.
+              Le frontend appelle ces fonctions, garde une copie locale pour
+              l'affichage immédiat, puis redessine la liste, la carte, les
+              lignes et le bandeau dès qu'une donnée change.
             </p>
             <a
               class="improvement-button"
@@ -418,7 +442,7 @@
           </button>
 
           <div class="credits">
-            <p>covoitCDLR v1.6.1 - Développé par Klm - contact : clementmorel@free.fr</p>
+            <p>covoitCDLR v1.6.2 - Développé par Klm - contact : clementmorel@free.fr</p>
             <p>
               <a href="https://github.com/mrklm/covoitCDLR" target="_blank" rel="noreferrer">
                 Repo GitHub covoitCDLR

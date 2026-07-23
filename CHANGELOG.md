@@ -4,6 +4,13 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.6.2] - Juillet 2026
+
+### Modifie
+
+- Mise a jour de l'aide integree pour expliquer la roue crantee et le pseudo dans les messages.
+- Ajout dans le README d'une arborescence detaillee et d'une explication des interactions entre fichiers.
+
 ## [1.6.1] - Juillet 2026
 
 ### Corrige
