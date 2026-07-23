@@ -4,6 +4,13 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.6.1] - Juillet 2026
+
+### Corrige
+
+- Affichage du pseudo dans les messages sous la forme `"Pseudo" Prenom Nom`.
+- Utilisation du pseudo dans les messages automatiques, le bandeau defilant et la liste des messages.
+
 ## [1.6.0] - Juillet 2026
 
 ### Ajoute

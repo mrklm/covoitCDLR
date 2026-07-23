@@ -767,6 +767,13 @@ function formatParticipantName(participant: Participant): string {
   return `${formatNamePart(participant.firstName)} ${formatNamePart(participant.lastName)}`;
 }
 
+function formatParticipantPublicName(participant: Participant): string {
+  const pseudo = participant.pseudo?.trim();
+  const name = formatParticipantName(participant);
+
+  return pseudo ? `"${pseudo}" ${name}` : name;
+}
+
 function renderParticipantDisplayName(participant: Participant): string {
   const pseudo = participant.pseudo?.trim();
   const name = escapeHtml(formatParticipantName(participant));
@@ -812,13 +819,13 @@ function buildDefaultJourneyMessage(
 ): string {
   const destination = getJourneyDestination(participant, journey, mode);
 
-  return `${formatParticipantName(participant)} propose un trajet vers ${destination} le ${formatMessageDate(journey.date)}`;
+  return `${formatParticipantPublicName(participant)} propose un trajet vers ${destination} le ${formatMessageDate(journey.date)}`;
 }
 
 function isDefaultJourneyMessage(participant: Participant, message: string): boolean {
   return message
     .trim()
-    .startsWith(`${formatParticipantName(participant)} propose un trajet vers `);
+    .startsWith(`${formatParticipantPublicName(participant)} propose un trajet vers `);
 }
 
 function getTodayValue(): string {
@@ -1557,7 +1564,7 @@ function renderMessageBanner(items: Participant[]): void {
           data-message-participant-id="${participant.id}"
           data-message-mode="${mode}"
         >
-          <strong>${escapeHtml(formatParticipantName(participant))}</strong>
+          <strong>${escapeHtml(formatParticipantPublicName(participant))}</strong>
           <span>${escapeHtml(dateLabel)} ${escapeHtml(message)}</span>
         </button>
       `;
@@ -1685,7 +1692,7 @@ function openMessageModal(participantId: string): void {
   form.dataset.participantId = participant.id;
   title?.replaceChildren(
     document.createTextNode(
-      `Message - ${formatParticipantName(participant)}`,
+      `Message - ${formatParticipantPublicName(participant)}`,
     ),
   );
   textarea.value =
@@ -1809,7 +1816,7 @@ function openMessageDetailModal(participantId: string, mode: JourneyMode): void 
       const modeLabel = itemMode === 'outbound' ? 'Aller' : 'Retour';
       const value = getMessageItemValue(participant.id, itemMode);
 
-      return `<option value="${value}">${escapeHtml(modeLabel)} - ${escapeHtml(formatParticipantName(participant))}</option>`;
+      return `<option value="${value}">${escapeHtml(modeLabel)} - ${escapeHtml(formatParticipantPublicName(participant))}</option>`;
     })
     .join('');
   select.value = getMessageItemValue(participantId, mode);
