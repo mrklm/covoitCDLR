@@ -4,6 +4,14 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.7.0] - Juillet 2026
+
+### Ajoute
+
+- Calculateur local d'estimation du cout d'un trajet depuis la fenetre Options.
+- Choix du type de vehicule, de l'attelage, de l'energie, de la distance, du nombre de personnes et des frais fixes.
+- Prix indicatifs modifiables pour carburants, recharge electrique maison et recharge electrique borne.
+
 ## [1.6.2] - Juillet 2026
 
 ### Modifie

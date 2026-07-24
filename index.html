@@ -51,7 +51,7 @@
           alt="Logo Chalon dans la rue"
         />
         <div class="header-title">
-          <h1>covoitCDLR <span class="app-version">v1.6.2</span></h1>
+          <h1>covoitCDLR <span class="app-version">v1.7.0</span></h1>
           <p>Festival Chalon dans la rue</p>
         </div>
       </div>
@@ -316,6 +316,12 @@
             Les données sont enregistrées automatiquement et partagées avec les
             autres utilisateurs.
           </p>
+          <p>
+            Dans Options, le bouton Estimer le coût d'un trajet ouvre un
+            calculateur indicatif. Il utilise le type de véhicule, l'attelage,
+            l'énergie, la distance et le nombre de personnes pour donner une
+            base de partage des frais. Les prix proposés sont modifiables.
+          </p>
           <section class="geek-help" aria-labelledby="geek-help-title">
             <h3 id="geek-help-title">Pour les geeks</h3>
             <p>
@@ -350,6 +356,12 @@
               Les annonces automatiques sont générées côté client à partir du
               participant, du sens du trajet, de la destination et de la date.
               Elles sont ensuite sauvegardées comme les messages personnalisés.
+            </p>
+            <p>
+              Le calculateur de coût reste entièrement local : il ne lit ni
+              n'écrit de données Supabase. Les prix d'énergie sont des valeurs
+              indicatives codées dans src/main.ts et peuvent être modifiés dans
+              la popup avant calcul.
             </p>
             <p>
               Arborescence simplifiée : index.html contient la structure des
@@ -440,9 +452,16 @@
           >
             Ajouter participant-e-s
           </button>
+          <button
+            id="cost-estimator-button"
+            class="option-action-button"
+            type="button"
+          >
+            Estimer le coût d'un trajet
+          </button>
 
           <div class="credits">
-            <p>covoitCDLR v1.6.2 - Développé par Klm - contact : clementmorel@free.fr</p>
+            <p>covoitCDLR v1.7.0 - Développé par Klm - contact : clementmorel@free.fr</p>
             <p>
               <a href="https://github.com/mrklm/covoitCDLR" target="_blank" rel="noreferrer">
                 Repo GitHub covoitCDLR
@@ -551,6 +570,121 @@
         </div>
         <footer class="modal-footer">
           <button class="modal-close-button" type="button" data-options-close>
+            Fermer
+          </button>
+        </footer>
+      </section>
+    </div>
+
+    <div
+      id="cost-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cost-modal-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-cost-close></div>
+      <section class="modal-panel cost-modal-panel">
+        <header class="modal-header">
+          <h2 id="cost-modal-title">Estimer le coût d'un trajet</h2>
+          <button class="modal-close-button" type="button" data-cost-close>
+            Fermer
+          </button>
+        </header>
+        <form id="cost-form" class="cost-form">
+          <label>
+            Type de véhicule
+            <select id="cost-vehicle" name="vehicle">
+              <option value="city">Voiture citadine</option>
+              <option value="road">Voiture routière</option>
+              <option value="utility">Utilitaire</option>
+              <option value="truck">Camion</option>
+              <option value="camper">Camping-car</option>
+            </select>
+          </label>
+          <label>
+            Attelage
+            <select id="cost-trailer" name="trailer">
+              <option value="none">Aucun</option>
+              <option value="trailer">Remorque</option>
+              <option value="caravan">Caravane</option>
+            </select>
+          </label>
+          <label>
+            Énergie
+            <select id="cost-energy" name="energy">
+              <option value="super">Super</option>
+              <option value="diesel">Gazole</option>
+              <option value="gpl">GPL</option>
+              <option value="hybrid">Hybride</option>
+              <option value="electric-home">Électrique - recharge maison</option>
+              <option value="electric-station">Électrique - borne</option>
+            </select>
+          </label>
+          <div id="cost-energy-prices" class="cost-energy-prices"></div>
+          <div class="cost-grid">
+            <label>
+              Prix retenu
+              <input
+                id="cost-energy-price"
+                name="energy-price"
+                type="number"
+                min="0"
+                step="0.01"
+                value="2.04"
+              />
+            </label>
+            <label>
+              Unité
+              <input id="cost-energy-unit" type="text" value="€/L" disabled />
+            </label>
+          </div>
+          <div class="cost-grid">
+            <label>
+              Distance du trajet
+              <input
+                id="cost-distance"
+                name="distance"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Ex. 240"
+              />
+            </label>
+            <label>
+              Personnes qui partagent
+              <input
+                id="cost-people"
+                name="people"
+                type="number"
+                min="1"
+                step="1"
+                value="2"
+              />
+            </label>
+          </div>
+          <label>
+            Frais fixes à ajouter
+            <input
+              id="cost-extra"
+              name="extra"
+              type="number"
+              min="0"
+              step="0.01"
+              value="0"
+            />
+          </label>
+          <div id="cost-result" class="cost-result" aria-live="polite">
+            Renseignez une distance pour obtenir une estimation.
+          </div>
+          <p>
+            Estimation indicative basée sur des prix modifiables. À ajuster
+            librement entre participant-e-s.
+          </p>
+        </form>
+        <footer class="modal-footer">
+          <button class="modal-close-button" type="button" data-cost-close>
             Fermer
           </button>
         </footer>

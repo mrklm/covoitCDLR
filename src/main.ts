@@ -9,6 +9,15 @@ import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 type JourneyMode = 'outbound' | 'return';
 type JourneyStatus = 'unset' | 'offer' | 'search';
+type CostVehicleType = 'city' | 'road' | 'utility' | 'truck' | 'camper';
+type CostTrailerType = 'none' | 'trailer' | 'caravan';
+type CostEnergyType =
+  | 'super'
+  | 'diesel'
+  | 'gpl'
+  | 'hybrid'
+  | 'electric-home'
+  | 'electric-station';
 type ThemeName =
   | 'sombre-midnight-garage'
   | 'sombre-air-klm-night-flight'
@@ -118,6 +127,45 @@ const defaultStepCount = 3;
 const maxStepCount = 8;
 const maxMessageLength = 300;
 const addCityValue = '__add-city__';
+const costDefaults = {
+  vehicles: {
+    city: { label: 'Voiture citadine', consumption: 5.8 },
+    road: { label: 'Voiture routière', consumption: 6.8 },
+    utility: { label: 'Utilitaire', consumption: 8.8 },
+    truck: { label: 'Camion', consumption: 15 },
+    camper: { label: 'Camping-car', consumption: 11.5 },
+  },
+  trailers: {
+    none: { label: 'Aucun', multiplier: 1 },
+    trailer: { label: 'Remorque', multiplier: 1.12 },
+    caravan: { label: 'Caravane', multiplier: 1.25 },
+  },
+  energies: {
+    super: { label: 'Super', price: 2.04, unit: '€/L', consumptionUnit: 'L/100 km' },
+    diesel: { label: 'Gazole', price: 2.16, unit: '€/L', consumptionUnit: 'L/100 km' },
+    gpl: { label: 'GPL', price: 1.06, unit: '€/L', consumptionUnit: 'L/100 km' },
+    hybrid: { label: 'Hybride', price: 2.04, unit: '€/L', consumptionUnit: 'L/100 km' },
+    'electric-home': {
+      label: 'Électrique - recharge maison',
+      price: 0.2,
+      unit: '€/kWh',
+      consumptionUnit: 'kWh/100 km',
+    },
+    'electric-station': {
+      label: 'Électrique - borne',
+      price: 0.6,
+      unit: '€/kWh',
+      consumptionUnit: 'kWh/100 km',
+    },
+  },
+} satisfies {
+  vehicles: Record<CostVehicleType, { label: string; consumption: number }>;
+  trailers: Record<CostTrailerType, { label: string; multiplier: number }>;
+  energies: Record<
+    CostEnergyType,
+    { label: string; price: number; unit: string; consumptionUnit: string }
+  >;
+};
 const returnDefaultDate = '2026-07-23';
 const defaultDarkMapBrightness = 70;
 
@@ -2241,6 +2289,173 @@ async function addCityFromResult(button: HTMLButtonElement): Promise<void> {
   closeCityModal();
 }
 
+function getSelectedCostEnergy(): CostEnergyType {
+  const energySelect = document.querySelector<HTMLSelectElement>('#cost-energy');
+  const value = energySelect?.value;
+
+  return value &&
+    [
+      'super',
+      'diesel',
+      'gpl',
+      'hybrid',
+      'electric-home',
+      'electric-station',
+    ].includes(value)
+    ? (value as CostEnergyType)
+    : 'super';
+}
+
+function getSelectedCostVehicle(): CostVehicleType {
+  const vehicleSelect = document.querySelector<HTMLSelectElement>('#cost-vehicle');
+  const value = vehicleSelect?.value;
+
+  return value &&
+    ['city', 'road', 'utility', 'truck', 'camper'].includes(value)
+    ? (value as CostVehicleType)
+    : 'city';
+}
+
+function getSelectedCostTrailer(): CostTrailerType {
+  const trailerSelect = document.querySelector<HTMLSelectElement>('#cost-trailer');
+  const value = trailerSelect?.value;
+
+  return value && ['none', 'trailer', 'caravan'].includes(value)
+    ? (value as CostTrailerType)
+    : 'none';
+}
+
+function formatEuro(value: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function updateCostEnergyDisplay(resetPrice = false): void {
+  const energy = getSelectedCostEnergy();
+  const energyPriceInput =
+    document.querySelector<HTMLInputElement>('#cost-energy-price');
+  const energyUnitInput =
+    document.querySelector<HTMLInputElement>('#cost-energy-unit');
+  const pricesContainer =
+    document.querySelector<HTMLElement>('#cost-energy-prices');
+  const selectedEnergy = costDefaults.energies[energy];
+
+  if (resetPrice && energyPriceInput) {
+    energyPriceInput.value = String(selectedEnergy.price);
+  }
+
+  if (energyUnitInput) {
+    energyUnitInput.value = selectedEnergy.unit;
+  }
+
+  if (pricesContainer) {
+    pricesContainer.innerHTML = `
+      <p><strong>Prix indicatifs modifiables</strong></p>
+      <dl>
+        <div>
+          <dt>Super</dt>
+          <dd>${costDefaults.energies.super.price.toFixed(2)} €/L</dd>
+        </div>
+        <div>
+          <dt>Gazole</dt>
+          <dd>${costDefaults.energies.diesel.price.toFixed(2)} €/L</dd>
+        </div>
+        <div>
+          <dt>GPL</dt>
+          <dd>${costDefaults.energies.gpl.price.toFixed(2)} €/L</dd>
+        </div>
+        <div>
+          <dt>Élec maison</dt>
+          <dd>${costDefaults.energies['electric-home'].price.toFixed(2)} €/kWh</dd>
+        </div>
+        <div>
+          <dt>Élec borne</dt>
+          <dd>${costDefaults.energies['electric-station'].price.toFixed(2)} €/kWh</dd>
+        </div>
+      </dl>
+    `;
+  }
+}
+
+function updateCostEstimate(): void {
+  const energy = getSelectedCostEnergy();
+  const vehicle = getSelectedCostVehicle();
+  const trailer = getSelectedCostTrailer();
+  const distanceInput = document.querySelector<HTMLInputElement>('#cost-distance');
+  const peopleInput = document.querySelector<HTMLInputElement>('#cost-people');
+  const priceInput = document.querySelector<HTMLInputElement>('#cost-energy-price');
+  const extraInput = document.querySelector<HTMLInputElement>('#cost-extra');
+  const result = document.querySelector<HTMLElement>('#cost-result');
+
+  if (!result) {
+    return;
+  }
+
+  const distance = Number(distanceInput?.value ?? 0);
+  const people = Math.max(1, Math.floor(Number(peopleInput?.value ?? 1)));
+  const price = Number(priceInput?.value ?? 0);
+  const extra = Math.max(0, Number(extraInput?.value ?? 0));
+  const isElectric = energy === 'electric-home' || energy === 'electric-station';
+  const baseConsumption = isElectric
+    ? vehicle === 'city'
+      ? 15
+      : vehicle === 'road'
+        ? 18
+        : vehicle === 'utility'
+          ? 23
+          : vehicle === 'truck'
+            ? 38
+            : 26
+    : costDefaults.vehicles[vehicle].consumption;
+  const consumption =
+    (energy === 'hybrid' ? baseConsumption * 0.78 : baseConsumption) *
+    costDefaults.trailers[trailer].multiplier;
+
+  if (!distance || distance <= 0 || !price || price <= 0) {
+    result.textContent = 'Renseignez une distance pour obtenir une estimation.';
+    return;
+  }
+
+  const energyCost = (distance * consumption * price) / 100;
+  const totalCost = energyCost + extra;
+  const costPerPerson = totalCost / people;
+  const consumptionUnit = costDefaults.energies[energy].consumptionUnit;
+
+  result.innerHTML = `
+    <strong>${formatEuro(costPerPerson)} par personne</strong>
+    <span>Coût énergie estimé : ${formatEuro(energyCost)}</span>
+    <span>Total avec frais fixes : ${formatEuro(totalCost)}</span>
+    <span>Base : ${consumption.toFixed(1)} ${consumptionUnit}, ${people} personne${people > 1 ? 's' : ''}</span>
+  `;
+}
+
+function openCostModal(): void {
+  const modal = document.querySelector<HTMLElement>('#cost-modal');
+
+  if (!modal) {
+    return;
+  }
+
+  updateCostEnergyDisplay(true);
+  updateCostEstimate();
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+}
+
+function closeCostModal(): void {
+  const modal = document.querySelector<HTMLElement>('#cost-modal');
+
+  if (!modal) {
+    return;
+  }
+
+  modal.hidden = true;
+  document.body.classList.remove('modal-open');
+}
+
 function bindControls(): void {
   const modeSelect = document.querySelector<HTMLSelectElement>('#journey-mode');
   const list = document.querySelector<HTMLUListElement>('#participant-list');
@@ -2254,6 +2469,11 @@ function bindControls(): void {
     document.querySelector<HTMLFormElement>('#participant-form');
   const participantCitySelect =
     document.querySelector<HTMLSelectElement>('#participant-city');
+  const costForm = document.querySelector<HTMLFormElement>('#cost-form');
+  const costEnergySelect =
+    document.querySelector<HTMLSelectElement>('#cost-energy');
+  const costEstimatorButton =
+    document.querySelector<HTMLButtonElement>('#cost-estimator-button');
 
   setMobileView(activeMobileView);
 
@@ -2430,6 +2650,22 @@ function bindControls(): void {
   participantForm?.addEventListener('submit', (event) => {
     event.preventDefault();
     void saveParticipantFromForm(participantForm);
+  });
+
+  costEstimatorButton?.addEventListener('click', openCostModal);
+  costForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+  });
+  costForm?.addEventListener('input', () => updateCostEstimate());
+  costForm?.addEventListener('change', (event) => {
+    if (event.target === costEnergySelect) {
+      updateCostEnergyDisplay(true);
+    }
+
+    updateCostEstimate();
+  });
+  document.querySelectorAll<HTMLElement>('[data-cost-close]').forEach((item) => {
+    item.addEventListener('click', closeCostModal);
   });
 
   document

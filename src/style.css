@@ -1014,24 +1014,28 @@ button:disabled {
 }
 
 .message-modal-panel,
-.participant-modal-panel {
+.participant-modal-panel,
+.cost-modal-panel {
   width: min(520px, 100%);
 }
 
 .message-form,
-.participant-form {
+.participant-form,
+.cost-form {
   display: grid;
   gap: 12px;
 }
 
 .message-form p,
-.participant-form p {
+.participant-form p,
+.cost-form p {
   margin: 0;
   color: var(--muted);
 }
 
 .message-form label,
-.participant-form label {
+.participant-form label,
+.cost-form label {
   display: grid;
   gap: 6px;
   color: var(--muted);
@@ -1060,6 +1064,54 @@ button:disabled {
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 800;
+}
+
+.cost-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cost-energy-prices,
+.cost-result {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+
+.cost-energy-prices dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.cost-energy-prices div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cost-energy-prices dt,
+.cost-energy-prices dd {
+  margin: 0;
+}
+
+.cost-energy-prices dt {
+  font-weight: 800;
+}
+
+.cost-result strong {
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.cost-result span {
+  display: block;
 }
 
 .message-detail-content {
@@ -1406,6 +1458,11 @@ button:disabled {
 
   .map-brightness-field input {
     min-width: 0;
+  }
+
+  .cost-grid,
+  .cost-energy-prices dl {
+    grid-template-columns: 1fr;
   }
 
   .message-banner {

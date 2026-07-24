@@ -42,6 +42,8 @@ Avec les themes sombres, un potentiometre de luminosite apparait au-dessus de la
 
 Sur telephone, un bouton permet de basculer entre l'affichage `Carte` et l'affichage `Participants`.
 
+Dans `Options`, le bouton `Estimer le cout d'un trajet` ouvre un calculateur indicatif. Il permet de choisir le type de vehicule, l'attelage, l'energie, la distance du trajet, le nombre de personnes et les frais fixes eventuels. Les prix d'energie proposes sont modifiables avant calcul.
+
 Les informations sont partagees avec les autres utilisateurs grace a Supabase. Apres modification, les donnees sont enregistrees automatiquement.
 
 ## Fonctionnalites
@@ -67,6 +69,7 @@ Les informations sont partagees avec les autres utilisateurs grace a Supabase. A
 - Chargement securise des donnees relatives aux technicien-ne-s depuis Supabase via une fonction RPC protegee par mot de passe.
 - Themes visuels configurables depuis la fenetre `Options`.
 - Potentiometre de luminosite de carte pour les themes sombres.
+- Calculateur local pour estimer un partage de frais de trajet.
 - Interface responsive ordinateur et telephone.
 
 ## Technologies
@@ -289,6 +292,8 @@ Les lignes de trajet sont dessinees avec Leaflet a partir des coordonnees GPS de
 Les trajets et annonces passes sont filtres cote client avec la date du jour. La carte bascule par defaut sur les retours a partir du 23 juillet 2026.
 
 Le bouton `Proposer une amelioration` de l'aide ouvre un mail vers `clementmorel@free.fr`.
+
+Le calculateur de cout de trajet est local et indicatif. Il ne depend pas de Supabase. Les bases de prix sont definies dans `src/main.ts` : super, gazole, GPL, electricite maison et electricite borne. Les consommations moyennes sont associees aux profils de vehicule, puis ajustees par l'attelage et divisees par le nombre de personnes.
 
 ### Arborescence detaillee
 
