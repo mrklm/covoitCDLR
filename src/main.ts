@@ -297,6 +297,8 @@ let pendingCityTarget: PendingCityTarget = null;
 let participantSourceNotice = '';
 let activeMobileView: 'map' | 'participants' = 'map';
 let currentAccessPassword: string | null = null;
+let lastValidCostVehicle: CostVehicleType = 'city';
+let trollfaceTimeoutId: number | null = null;
 
 function isMobileViewport(): boolean {
   return window.matchMedia('(max-width: 820px)').matches;
@@ -2316,6 +2318,35 @@ function getSelectedCostVehicle(): CostVehicleType {
     : 'city';
 }
 
+function showTrollface(): void {
+  const overlay = document.querySelector<HTMLElement>('#trollface-overlay');
+
+  if (!overlay) {
+    return;
+  }
+
+  overlay.hidden = false;
+
+  if (trollfaceTimeoutId !== null) {
+    window.clearTimeout(trollfaceTimeoutId);
+  }
+
+  trollfaceTimeoutId = window.setTimeout(() => {
+    overlay.hidden = true;
+    trollfaceTimeoutId = null;
+  }, 1000);
+}
+
+function handleCostVehicleChange(select: HTMLSelectElement): void {
+  if (select.value === 'tank' || select.value === 'pony') {
+    showTrollface();
+    select.value = lastValidCostVehicle;
+    return;
+  }
+
+  lastValidCostVehicle = getSelectedCostVehicle();
+}
+
 function getSelectedCostTrailer(): CostTrailerType {
   const trailerSelect = document.querySelector<HTMLSelectElement>('#cost-trailer');
   const value = trailerSelect?.value;
@@ -2472,6 +2503,8 @@ function bindControls(): void {
   const costForm = document.querySelector<HTMLFormElement>('#cost-form');
   const costEnergySelect =
     document.querySelector<HTMLSelectElement>('#cost-energy');
+  const costVehicleSelect =
+    document.querySelector<HTMLSelectElement>('#cost-vehicle');
   const costEstimatorButton =
     document.querySelector<HTMLButtonElement>('#cost-estimator-button');
 
@@ -2660,6 +2693,10 @@ function bindControls(): void {
   costForm?.addEventListener('change', (event) => {
     if (event.target === costEnergySelect) {
       updateCostEnergyDisplay(true);
+    }
+
+    if (event.target === costVehicleSelect && costVehicleSelect) {
+      handleCostVehicleChange(costVehicleSelect);
     }
 
     updateCostEstimate();

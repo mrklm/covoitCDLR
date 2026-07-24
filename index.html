@@ -51,7 +51,7 @@
           alt="Logo Chalon dans la rue"
         />
         <div class="header-title">
-          <h1>covoitCDLR <span class="app-version">v1.7.0</span></h1>
+          <h1>covoitCDLR <span class="app-version">v1.7.1</span></h1>
           <p>Festival Chalon dans la rue</p>
         </div>
       </div>
@@ -318,9 +318,15 @@
           </p>
           <p>
             Dans Options, le bouton Estimer le coût d'un trajet ouvre un
-            calculateur indicatif. Il utilise le type de véhicule, l'attelage,
-            l'énergie, la distance et le nombre de personnes pour donner une
-            base de partage des frais. Les prix proposés sont modifiables.
+            calculateur indicatif, disponible sur ordinateur et téléphone. Il
+            utilise le type de véhicule, l'attelage, l'énergie, la distance, le
+            nombre de personnes et les frais fixes éventuels pour donner une
+            base de partage des frais.
+          </p>
+          <p>
+            Les prix proposés pour le carburant ou la recharge électrique sont
+            de simples bases de calcul. Vous pouvez les modifier directement
+            avant d'estimer le coût par personne.
           </p>
           <section class="geek-help" aria-labelledby="geek-help-title">
             <h3 id="geek-help-title">Pour les geeks</h3>
@@ -362,6 +368,12 @@
               n'écrit de données Supabase. Les prix d'énergie sont des valeurs
               indicatives codées dans src/main.ts et peuvent être modifiés dans
               la popup avant calcul.
+            </p>
+            <p>
+              Le calcul applique une consommation moyenne par type de véhicule,
+              un coefficient selon l'attelage, puis multiplie par la distance
+              et le prix de l'énergie. Les frais fixes sont ajoutés au total,
+              avant division par le nombre de personnes.
             </p>
             <p>
               Arborescence simplifiée : index.html contient la structure des
@@ -461,7 +473,7 @@
           </button>
 
           <div class="credits">
-            <p>covoitCDLR v1.7.0 - Développé par Klm - contact : clementmorel@free.fr</p>
+            <p>covoitCDLR v1.7.1 - Développé par Klm - contact : clementmorel@free.fr</p>
             <p>
               <a href="https://github.com/mrklm/covoitCDLR" target="_blank" rel="noreferrer">
                 Repo GitHub covoitCDLR
@@ -601,6 +613,8 @@
               <option value="utility">Utilitaire</option>
               <option value="truck">Camion</option>
               <option value="camper">Camping-car</option>
+              <option value="tank">Char d'assaut</option>
+              <option value="pony">Poney</option>
             </select>
           </label>
           <label>
@@ -682,6 +696,9 @@
             Estimation indicative basée sur des prix modifiables. À ajuster
             librement entre participant-e-s.
           </p>
+          <div id="trollface-overlay" class="trollface-overlay" hidden>
+            <img src="%BASE_URL%Trollface.png" alt="" />
+          </div>
         </form>
         <footer class="modal-footer">
           <button class="modal-close-button" type="button" data-cost-close>

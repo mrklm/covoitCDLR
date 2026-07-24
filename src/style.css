@@ -1114,6 +1114,26 @@ button:disabled {
   display: block;
 }
 
+.trollface-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2300;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: rgb(0 0 0 / 10%);
+}
+
+.trollface-overlay[hidden] {
+  display: none;
+}
+
+.trollface-overlay img {
+  width: min(220px, 55vw);
+  height: auto;
+  filter: drop-shadow(0 18px 30px rgb(0 0 0 / 35%));
+}
+
 .message-detail-content {
   display: grid;
   gap: 14px;

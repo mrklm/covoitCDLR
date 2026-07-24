@@ -4,6 +4,13 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.7.1] - Juillet 2026
+
+### Ajoute
+
+- Clin d'oeil dans le calculateur avec les choix `Char d'assaut` et `Poney`.
+- Affichage temporaire de `Trollface.png` quand un moyen de transport fantaisie est choisi.
+
 ## [1.7.0] - Juillet 2026
 
 ### Ajoute
