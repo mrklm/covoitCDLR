@@ -4,6 +4,13 @@ Toutes les modifications notables de covoitCDLR sont suivies dans ce fichier.
 
 Le format suit l'esprit de Keep a Changelog, avec des sections simples en francais.
 
+## [1.7.2] - Juillet 2026
+
+### Ajoute
+
+- Ajout du carburant fantaisie `Pontarlier - 25.15 €/L` dans le calculateur.
+- Affichage temporaire de `Trollface.png` quand `Pontarlier` est choisi.
+
 ## [1.7.1] - Juillet 2026
 
 ### Ajoute

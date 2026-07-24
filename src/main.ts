@@ -298,6 +298,7 @@ let participantSourceNotice = '';
 let activeMobileView: 'map' | 'participants' = 'map';
 let currentAccessPassword: string | null = null;
 let lastValidCostVehicle: CostVehicleType = 'city';
+let lastValidCostEnergy: CostEnergyType = 'super';
 let trollfaceTimeoutId: number | null = null;
 
 function isMobileViewport(): boolean {
@@ -2347,6 +2348,17 @@ function handleCostVehicleChange(select: HTMLSelectElement): void {
   lastValidCostVehicle = getSelectedCostVehicle();
 }
 
+function handleCostEnergyChange(select: HTMLSelectElement): boolean {
+  if (select.value === 'pontarlier') {
+    showTrollface();
+    select.value = lastValidCostEnergy;
+    return false;
+  }
+
+  lastValidCostEnergy = getSelectedCostEnergy();
+  return true;
+}
+
 function getSelectedCostTrailer(): CostTrailerType {
   const trailerSelect = document.querySelector<HTMLSelectElement>('#cost-trailer');
   const value = trailerSelect?.value;
@@ -2405,6 +2417,10 @@ function updateCostEnergyDisplay(resetPrice = false): void {
         <div>
           <dt>Élec borne</dt>
           <dd>${costDefaults.energies['electric-station'].price.toFixed(2)} €/kWh</dd>
+        </div>
+        <div>
+          <dt>Pontarlier</dt>
+          <dd>25.15 €/L</dd>
         </div>
       </dl>
     `;
@@ -2691,8 +2707,14 @@ function bindControls(): void {
   });
   costForm?.addEventListener('input', () => updateCostEstimate());
   costForm?.addEventListener('change', (event) => {
-    if (event.target === costEnergySelect) {
+    if (event.target === costEnergySelect && costEnergySelect) {
+      const isRealEnergy = handleCostEnergyChange(costEnergySelect);
       updateCostEnergyDisplay(true);
+
+      if (!isRealEnergy) {
+        updateCostEstimate();
+        return;
+      }
     }
 
     if (event.target === costVehicleSelect && costVehicleSelect) {
